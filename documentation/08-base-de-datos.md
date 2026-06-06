@@ -52,7 +52,7 @@ cliente-servidor instala **solo su** driver, como extra opcional:
 
 ```bash
 uv sync --extra postgres                 # en el repo / con uv
-pip install "tequio-core[postgres]"      # con pip (tequio-core AÚN NO está en PyPI)
+pip install "tequio-core[postgres]"      # con pip
 ```
 
 !!! note "tequio-core todavía no se publica en PyPI"

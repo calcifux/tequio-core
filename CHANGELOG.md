@@ -7,6 +7,16 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-06-06
+
+### Corregido
+
+- **PyPI mostraba la página del paquete sin descripción**: faltaba `readme = "README.md"`
+  en `[project]` (la metadata de una versión ya publicada no se puede editar; de ahí este
+  release). La página de `tequio-core` ahora muestra el README completo.
+- Docs/README: eliminadas las notas de "aún no publicado en PyPI" — `tequio-core` vive en
+  PyPI desde 0.1.0.
+
 ## [0.1.0] - 2026-06-06
 
 **Nacimiento de tequio**: la extracción **worker-side** de [milpa](https://github.com/calcifux/milpa)

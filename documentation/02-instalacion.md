@@ -22,11 +22,6 @@
 El paquete se publica en PyPI como **`tequio-core`** (el import y el comando siguen siendo
 `tequio`).
 
-!!! warning "Aún no publicado"
-    `tequio-core` **todavía no está publicado en PyPI**. Mientras tanto, instálalo desde
-    el repositorio o desde una ruta local (`pip install -e .` dentro del clon, o
-    `uv add <ruta-al-repo>`).
-
 ### Con `pip`
 
 ```bash

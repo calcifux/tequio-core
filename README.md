@@ -58,10 +58,6 @@ listo para correr (estilo `laravel new` / `django-admin startproject`):
 uv tool install tequio-core    # o:  pipx install tequio-core  ·  pip install tequio-core
 # El paquete se llama `tequio-core` en PyPI (porque `tequio` puede chocar con otro proyecto), pero
 # el comando de consola y el import SIGUEN siendo `tequio`: `tequio new …` / `import tequio`.
-#
-# ⚠️ tequio-core AÚN NO está publicado en PyPI. Mientras tanto, instálalo desde el repo:
-#     uv tool install "git+https://github.com/calcifux/tequio-core"
-#     # o, clonado en local:  uv tool install /ruta/a/tequio-core
 
 # 2) crea un proyecto CON el demo de notas (jobs/crons/observers, mediator, pipeline, seeder Faker)
 tequio new pulso --demo
