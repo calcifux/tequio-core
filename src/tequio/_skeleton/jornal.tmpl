@@ -1,0 +1,17 @@
+#!/usr/bin/env python3
+"""jornal — la consola de TU proyecto (el "artisan" local de __PROJECT__).
+
+Es un lanzador fino: el CLI de verdad (descubrimiento de comandos + Typer) vive en
+tequio. Aquí solo se arranca, para tenerlo a la mano en la raíz del proyecto.
+
+Uso:
+    python jornal list             # ver todos los comandos
+    python jornal queue work       # arranca el worker de Celery
+    python jornal schedule work    # arranca el beat (crons)
+    ./jornal list                  # si el venv está activo y el archivo es ejecutable
+"""
+
+from tequio.Core.Console.Cli import run
+
+if __name__ == "__main__":
+    run()

@@ -1,0 +1,41 @@
+# Traducciones ES para `emails/trans/mastersigned.html.j2` (basado en el legacy
+# `resources/lang/es/emails/mastersigned.php`).
+#
+# NOTA: el legacy ES colapsaba los datos del firmante en UNA sola clave
+# `sign_message_data`, mientras el footer (y el archivo EN) consultan 3 claves
+# separadas (_phone/_email/_address). Eso dejaba el bloque del firmante con las
+# claves literales en español. Reconciliamos: ES usa las MISMAS 3 claves que EN.
+es:
+  privacy_message: |
+    <p class="MsoNormal" style="margin-bottom:0cm;text-align:justify;line-height:normal"><span style="color:#000000"><strong><span style="font-size:8pt;font-family:Arial,sans-serif">CONFIDENCIALIDAD
+            Y PRIVACIDAD.</span></strong><span style="font-size:8pt;font-family:Arial,sans-serif">&nbsp;Este
+          correo electrónico, incluyendo la información y cualquier
+          archivo adjunto al mismo (el "<strong><u>Correo</u></strong>"),
+          es información confidencial y privilegiada en resguardo
+          y/o propiedad de&nbsp;<strong>%{app_name}</strong>, sus
+          filiales y, en algunos casos, de sus funcionarios o
+          empleados, para uso exclusivo de los destinatarios del
+          mismo. Este&nbsp;<strong>Correo</strong>&nbsp;se encuentra protegido
+          por ley y su uso indebido, negligente o doloso, es objeto
+          de sanciones legales. Si recibió este&nbsp;<strong>Correo</strong>&nbsp;por
+          error, se le prohíbe su divulgación, difusión,
+          retransmisión, alteración, utilización, impresión o copia
+          parcial o total del mismo o de su contenido, y debe:&nbsp;<strong>(i)</strong>&nbsp;informar
+          inmediatamente al remitente del error y&nbsp;<strong>(ii)</strong>eliminar
+          permanentemente el&nbsp;<strong>Correo</strong>&nbsp;y cualquier
+          reenvío de éste. Las opiniones contenidas en el&nbsp;<strong>Correo</strong>&nbsp;son
+          del remitente y no representan necesariamente la opinión
+          de %{app_name}. Cualquier oferta y/o aceptación de propuestas
+          comerciales, acuerdos, contratos u otros actos que
+          pudieran resultar en cualquier tipo de obligación legal
+          para %{app_name}, deben ser confirmadas por escrito y firmadas
+          por un funcionario autorizado, excepto cuando exista un
+          acuerdo previo y por escrito válido, autorizando este
+          medio para dichos fines. Asimismo, para información
+          respecto de nuestro Aviso de Privacidad Integral, consulte
+          nuestra página&nbsp;<a style="color:#000000" href="https://www.example.com/" target="_blank">www.example.com</a><u>.</u></span></span>
+    </p>
+  sign_message: '%{sender_name}'
+  sign_message_data_phone: '%{sender_phone}'
+  sign_message_data_email: '%{sender_email}'
+  sign_message_data_address: '%{sender_address}'

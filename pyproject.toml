@@ -1,0 +1,151 @@
+# Backend de construcción: hatchling sabe empaquetar código + datos (.j2/.yml/.css…).
+# Sin esta sección el paquete NO se puede construir (`uv build` / `pip install` fallan).
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tequio-core"
+version = "0.1.0"
+description = "Núcleo de trabajo en segundo plano estilo milpa: jobs, crons, eventos y BD (Celery + SQLAlchemy + Typer) sin capa HTTP."
+authors = [{ name = "@Calcifux (Carlos Guillermo Reyes Ramiro)" }]
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.14"
+dependencies = [
+    "alembic>=1.18.4",
+    "celery[redis]>=5.6.3",
+    "croniter>=6.2.2",
+    "i18nice[YAML]>=0.16",
+    "jinja2>=3.1.4",
+    "loguru>=0.7",
+    "pydantic-settings>=2.14.1",
+    "redis>=6.4.0",
+    "rich>=15.0.0",
+    "sqlalchemy>=2.0.50",
+    "sqlalchemy-easy-softdelete>=0.9.0",
+    "typer>=0.26.2",
+    "tzdata>=2026.2",
+    "tzlocal>=5.3.1",
+]
+
+# Drivers de BD por motor (opcionales). El engine es agnostico del dialecto
+# (ver src/tequio/Core/Database/Session.py); aqui solo decides QUE driver instalar.
+# sqlite va GRATIS (stdlib): es el default esperado para servicios tequio chicos.
+# Otros motores instalan solo el suyo:  uv sync --extra mysql
+#                                       pip install "tequio-core[postgres]"
+[project.optional-dependencies]
+mysql = ["pymysql>=1.2.0"]           # MySQL/MariaDB
+postgres = ["psycopg[binary]>=3.2"]  # PostgreSQL (psycopg v3, binario: sin libpq-dev)
+oracle = ["oracledb>=2.5"]           # Oracle (reemplaza al viejo cx_Oracle)
+mssql = ["pyodbc>=5.2"]              # SQL Server (requiere el ODBC Driver del SO)
+
+# Comando de consola que se instala en el PATH al hacer `pip install tequio-core`.
+[project.scripts]
+tequio = "tequio.Core.Console.Cli:run"
+
+# Qué empaquetar en el wheel: el paquete importable vive en src/tequio.
+[tool.hatch.build.targets.wheel]
+packages = ["src/tequio"]
+
+[dependency-groups]
+dev = [
+    "faker>=40.19.1",
+    "import-linter>=2.11",
+    "mypy>=2.1.0",
+    "pytest>=9.0.3",
+    "ruff>=0.15.14",
+]
+docs = [
+    "mkdocs-material>=9.7.6",
+]
+
+# ---------------------------------------------------------------------------
+# pytest: SOLO unit tests SIN BD (rápidos y gratis en CI). La carpeta Tests/
+# espeja 1:1 la estructura de src/tequio/. importmode=importlib permite mismos
+# nombres de archivo (test_X.py) en distintas carpetas sin __init__.py.
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["Tests"]
+pythonpath = ["src"]
+addopts = "-q --import-mode=importlib"
+
+# ---------------------------------------------------------------------------
+# Ruff: lint + format (reemplaza black/isort/flake8). Guardrail #1.
+# ---------------------------------------------------------------------------
+[tool.ruff]
+target-version = "py314"
+line-length = 120
+# Las revisiones de Alembic son GENERADAS (op/sa pueden quedar sin uso en migraciones
+# triviales). El env.py SÍ se lintea (es escrito a mano).
+extend-exclude = ["migrations/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]  # pycodestyle, pyflakes, isort, pyupgrade, bugbear
+# E501: el largo de línea lo maneja el formatter.
+ignore = ["E501"]
+
+# Guardrail: TODO archivo debe declarar `from __future__ import annotations` (anotaciones como
+# string, PEP 563). Ruff lo marca y autofixea — fail-fast, acorde al tenet "nunca falla en silencio".
+[tool.ruff.lint.isort]
+required-imports = ["from __future__ import annotations"]
+
+# ---------------------------------------------------------------------------
+# MyPy estricto: sin type hints completos, el PR no pasa. Guardrail #2.
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.14"
+strict = true
+plugins = ["pydantic.mypy"]
+exclude = ["\\.venv"]
+files = ["src/tequio", "Tests/Core"]
+mypy_path = "src"
+# Celery no envía type stubs: sus decoradores (@task) son "untyped". Relajamos
+# SOLO este sub-flag de strict para no tener que ignorar cada tarea a mano.
+disallow_untyped_decorators = false
+
+# Librerías de terceros sin stubs de tipos.
+[[tool.mypy.overrides]]
+module = ["celery.*", "kombu.*", "sqlalchemy_easy_softdelete.*", "croniter.*", "tzlocal.*", "faker.*"]
+ignore_missing_imports = true
+
+# ---------------------------------------------------------------------------
+# import-linter: frontera FORZADA. Guardrail #3.  CLI: uv run lint-imports
+# tequio nació de extraer el lado worker de milpa: este contrato garantiza que
+# la capa WEB/HTTP (y la auth-web) NO se vuelva a colar al core. El correo SÍ
+# regresa a tequio (muchos crons mandan mail), así que el templating (jinja2) y
+# el i18n (i18nice) son dependencias worker-side LEGÍTIMAS y NO se prohíben:
+# lo vetado es FastAPI/Starlette/uvicorn/slowapi/httpx + la auth-web
+# (itsdangerous/pwdlib/jwt).
+# ---------------------------------------------------------------------------
+[tool.importlinter]
+root_package = "tequio"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "tequio es worker-side: el Core NO depende de la capa web/HTTP ni de la auth-web"
+type = "forbidden"
+source_modules = ["tequio.Core"]
+forbidden_modules = [
+    "fastapi",
+    "starlette",
+    "uvicorn",
+    "slowapi",
+    "httpx",
+    "itsdangerous",
+    "pwdlib",
+    "jwt",
+]
+
+[[tool.importlinter.contracts]]
+name = "El shared kernel (Core/Models/Dictionaries) NO depende de los módulos"
+type = "forbidden"
+source_modules = ["tequio.Core", "tequio.Models", "tequio.Dictionaries"]
+forbidden_modules = ["tequio.Modules"]
+
+[[tool.importlinter.contracts]]
+name = "Los módulos son independientes entre sí (no se importan unos a otros)"
+type = "independence"
+# Wildcard: cubre TODOS los módulos presentes sin
+# listarlos a mano. Agregar un módulo = cero edición aquí.
+modules = ["tequio.Modules.*"]

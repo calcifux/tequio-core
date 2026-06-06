@@ -1,0 +1,40 @@
+{# Layout maestro de correo (port 1:1 de `emails/trans/master.blade.php`). #}
+{# Las hijas hacen `{% extends "Trans/master.html.j2" %}` + `{% block content %}`. #}
+<!DOCTYPE html>
+<html lang="{{ locale | default('es', true) }}">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body style="font-size:14px;font-family:Arial,serif;">
+<div id="app">
+    {# init header — el logo se embebe con CID si el llamador lo pasó. #}
+    {# `is defined and` evita explotar con StrictUndefined cuando no se pasa. #}
+    <div>
+        <br/>
+        {% if logo_cid is defined and logo_cid %}
+            <img style="height: 50px; margin-left: -5px;" src="cid:{{ logo_cid }}" alt="logo"/>
+        {% endif %}
+        <br/>
+        <br/>
+    </div>
+    {# end header #}
+
+    {# init content #}
+    <div>
+        {% block content %}{% endblock %}
+    </div>
+    {# end content #}
+
+    {# init footer. default('', true) aplica el valor cuando la var no está
+       definida (compatible con StrictUndefined) o cuando es falsy. #}
+    <div>
+        {{ t('Emails/master.faq_message', {'contact_phone': contact_phone | default('', true)}, locale | default('es', true)) | safe }}
+    </div>
+    {# end footer #}
+</div>
+
+</body>
+</html>

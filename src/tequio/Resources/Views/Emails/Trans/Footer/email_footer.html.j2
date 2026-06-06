@@ -1,0 +1,31 @@
+{# Footer firmado (basado en `emails/trans/footer/email_footer.blade.php`).      #}
+{# Los datos del firmante usan 3 claves separadas (_phone/_email/_address). El   #}
+{# legacy ES los colapsaba en `sign_message_data`; reconciliamos ambos catálogos #}
+{# (ES y EN) a las mismas 3 claves para que el footer renderice igual en los dos.#}
+<div style="font-size:12px;">
+    <br>
+    <div class="MsoNormal brand-font primary-color" style="padding: 0;margin: 0; font-size: 14px;">
+        <strong>
+            {{ t('Emails/mastersigned.sign_message', {'sender_name': sender_name | default('', true)}, locale | default('es', true)) | safe }}
+        </strong>
+    </div>
+
+    {% if show_brand_text is defined and show_brand_text %}
+        <span class="brand-font primary-color" style="margin: 4px 0;"><strong>{{ app_name | default('', true) }}</strong></span>
+    {% endif %}
+
+    <div class="MsoNormal brand-font primary-color" style="margin: 15px 0;">
+        <p class="MsoNormal brand-font primary-color" style="margin: 2px 0; padding: 0;">
+            {{ t('Emails/mastersigned.sign_message_data_phone', {'sender_phone': sender_phone | default('', true)}, locale | default('es', true)) | safe }}
+        </p>
+        <p class="MsoNormal brand-font primary-color" style="margin: 2px 0; padding: 0;">
+            {{ t('Emails/mastersigned.sign_message_data_email', {'sender_email': sender_email | default('', true)}, locale | default('es', true)) | safe }}
+        </p>
+        <p class="MsoNormal brand-font primary-color" style="margin: 2px 0; padding: 0;">
+            {{ t('Emails/mastersigned.sign_message_data_address', {'sender_address': sender_address | default('', true)}, locale | default('es', true)) | safe }}
+        </p>
+    </div>
+
+    {{ t('Emails/mastersigned.privacy_message', {}, locale | default('es', true)) | safe }}
+
+</div>

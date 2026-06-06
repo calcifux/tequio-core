@@ -1,0 +1,15 @@
+# Traducciones ES para `Emails/Trans/master.html.j2`.
+# Port 1:1 del legacy `resources/lang/es/emails/master.php` (los `:name` del
+# legacy se reescriben como `%{name}` por la sintaxis de i18nice).
+es:
+  faq_message: |
+    <br/>
+    <br/>
+    <br/>
+    Estamos a sus &oacute;rdenes para atender cualquier duda.
+    <br/>
+    %{app_name}
+    <br/>
+    %{contact_phone}
+  welcome_message: 'Bienvenido a %{app_name}.'
+  welcome_message_subject: 'Bienvenido a %{app_name}'

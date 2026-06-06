@@ -1,0 +1,41 @@
+# __PROJECT__
+
+Proyecto construido con [tequio](https://pypi.org/project/tequio) 🤝 — un núcleo
+worker-side estilo milpa (Celery + SQLAlchemy + Typer), sin capa HTTP.
+
+## Arrancar
+
+```bash
+uv sync                    # instala tequio y dependencias
+cp .env.example .env       # ajusta DATABASE_URL y secretos
+python jornal list         # ve todos los comandos
+python jornal queue work   # arranca el worker de Celery
+```
+
+Prueba: `python jornal hello greet` (comando de ejemplo del módulo Hello).
+
+## Estructura
+
+```
+app/
+  Models/        # tus modelos (tablas) — un archivo por modelo
+  Modules/       # tus módulos (jobs, crons, eventos, comandos). Empieza con Hello/
+  Console/       # tus comandos de consola
+migrations/      # migraciones Alembic
+jornal           # tu consola (./jornal list)
+.env             # tu configuración (no se sube a git)
+```
+
+tequio descubre todo **por convención** (no hay que registrar nada): crea un `@job`
+bajo `app/Modules/<X>/Jobs/` o un `@console_command` bajo `app/Modules/<X>/Console/Commands/`
+y queda vivo.
+
+## Comandos útiles
+
+```bash
+python jornal list            # todos los comandos
+python jornal make model Foo  # genera un modelo nuevo
+python jornal migrate run     # aplica migraciones
+python jornal queue work      # arranca el worker (procesa los @job)
+python jornal schedule work   # arranca el beat (crons)
+```

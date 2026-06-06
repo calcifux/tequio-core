@@ -1,0 +1,6 @@
+{# Resumen diario ANÓNIMO (monolingüe ES). Solo muestra el conteo. Extiende el firmado. #}
+{% extends "Emails/Trans/mastersigned.html.j2" %}
+{% block content %}
+    <h2 style="margin:0 0 12px;">Resumen diario</h2>
+    <p>Hoy hay <strong>{{ total }}</strong> notas en total.</p>
+{% endblock %}

@@ -1,0 +1,26 @@
+[project]
+name = "__PROJECT__"
+version = "0.1.0"
+description = "Proyecto __PROJECT__ construido con tequio 🤝."
+requires-python = ">=3.14"
+dependencies = [
+    # El paquete se llama `tequio-core` en PyPI (el import y el comando siguen siendo `tequio`).
+    # tequio-core aún NO está publicado en PyPI; mientras tanto instala desde el repo o ruta local.
+    "tequio-core>=0.1.0",
+]
+
+# Driver de BD: por default sqlite (incluido en Python). Para MySQL/Postgres/etc.
+# instala el extra del motor que uses, p. ej.:  uv add "tequio-core[postgres]"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0",
+    "faker>=40",  # datos falsos para factories/seeders (DEV, como el require-dev de Laravel)
+]
+
+# Este proyecto NO es una librería: se corre con `./jornal <comando>`, no se instala como
+# paquete. Por eso NO lleva [build-system]. uv lo trata como proyecto "virtual"
+# (instala las dependencias, no el proyecto en sí).
+[tool.pytest.ini_options]
+testpaths = ["Tests"]
+addopts = "-q --import-mode=importlib"

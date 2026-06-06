@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+"""jornal — entrypoint de consola en la RAÍZ del proyecto.
+
+Es el "artisan" de **tequio** (el núcleo worker): un LAUNCHER fino. El "kernel"
+de consola (descubrimiento de commands + la app de Typer) vive en el framework,
+en src/tequio/Core/Console/Cli.py; aquí solo se arranca, para tenerlo a la mano en la raíz.
+
+Uso:
+    uv run python jornal list                  # ve todos los comandos
+    uv run python jornal queue work            # arranca el worker de Celery
+    uv run python jornal schedule work         # arranca el beat (crons)
+    ./jornal list                              # si el venv está activo
+"""
+
+from tequio.Core.Console.Cli import run
+
+if __name__ == "__main__":
+    run()

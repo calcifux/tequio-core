@@ -1,0 +1,63 @@
+name: CI
+
+# Corre los MISMOS guardrails que en local (CONTRIBUTING §Guardrails) en cada push a main y en cada PR.
+# tequio es worker-side: NO hay capa HTTP ni frontend, así que tampoco hay pasos de npm/Vite.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancela corridas viejas del mismo ref si llega un push nuevo.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint + Types + Imports + Tests + Build
+    runs-on: ubuntu-latest
+    # Sin .env en CI: damos un sqlite dummy explícito (DATABASE_URL ya tiene default en
+    # Settings, pero lo dejamos claro). Basta para importar (el engine es perezoso) y los
+    # tests son sin BD. Igual lo necesitan lint-imports y pytest (importan tequio.*).
+    env:
+      DATABASE_URL: "sqlite://"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Instalar uv (con Python 3.14 + caché)
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          python-version: "3.14"
+          enable-cache: true
+
+      - name: Sincronizar dependencias (incluye grupo dev; reproducible con el lock)
+        run: uv sync --frozen
+
+      # Los 3 guardrails + tests, en pasos separados para ver de un vistazo cuál falla.
+      - name: Ruff format (solo verifica)
+        run: uv run ruff format --check .
+
+      - name: Ruff lint
+        run: uv run ruff check .
+
+      - name: Mypy (estricto)
+        run: uv run mypy
+
+      - name: "Fronteras (import-linter: worker-side + módulos)"
+        run: uv run lint-imports
+
+      - name: Pytest (rápidos, sin BD)
+        run: uv run pytest
+
+      # --- Gate de empaquetado: el wheel se construye en limpio y se puede importar ---
+      - name: Build sanity (uv build construye sdist + wheel)
+        run: uv build
+
+      - name: Smoke de instalación (wheel limpio + import + CLI tequio)
+        run: |
+          uv venv /tmp/tequio-smoke
+          uv pip install --python /tmp/tequio-smoke/bin/python dist/*.whl
+          /tmp/tequio-smoke/bin/python -c "import tequio; print('tequio OK')"
+          # El script `tequio` se instaló en el PATH del venv: que al menos liste sin tronar.
+          /tmp/tequio-smoke/bin/tequio list

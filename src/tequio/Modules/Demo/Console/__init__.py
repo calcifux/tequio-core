@@ -1,0 +1,1 @@
+"""Consola del módulo demo."""

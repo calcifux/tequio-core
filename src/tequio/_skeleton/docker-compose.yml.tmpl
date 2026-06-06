@@ -1,0 +1,25 @@
+# Docker SOLO levanta infraestructura de DESARROLLO. La app corre en el HOST con `jornal queue work`.
+#
+#   docker compose up -d     # levanta redis + mailpit
+#   docker compose down      # apagar
+#   Mailpit UI:  http://localhost:8025   (los correos que mandan crons/jobs caen aquí)
+name: __PROJECT__
+
+services:
+  # Redis: broker para @job / @cron_task (solo si quieres correrlos en background async).
+  redis:
+    image: redis:7-alpine
+    container_name: __PROJECT__-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  # SMTP de desarrollo: los crons/jobs que mandan correo entregan aquí y los ves en la UI web
+  # (nada sale a internet). La pareja del driver real de Mail (pon MAIL_DRIVER=smtp en .env).
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: __PROJECT__-mailpit
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"  # SMTP (la app envía aquí)
+      - "${MAILPIT_UI_PORT:-8025}:8025"    # interfaz web para ver correos
+    restart: unless-stopped

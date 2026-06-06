@@ -1,0 +1,18 @@
+"""Comando de ejemplo `tequio hello greet` — generado por `tequio new`.
+
+tequio descubre este comando SOLO: escanea app/Modules/*/Console/Commands/ y monta
+cualquier función marcada con @console_command. No hay que registrarlo en ningún lado.
+Copia esta carpeta para tu primer módulo real (o usa `tequio make ...`), o bórrala.
+"""
+
+from __future__ import annotations
+
+import typer
+
+from tequio.Core.Console import console_command
+
+
+@console_command(name="greet", help="Saluda desde el módulo Hello (confirma que tequio te descubrió).")
+def greet() -> None:
+    """Imprime un saludo: confirma que tequio descubrió tu módulo."""
+    typer.echo("¡tequio está sembrado! 🤝 (módulo: Hello)")

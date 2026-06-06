@@ -1,0 +1,35 @@
+{# Layout maestro con firma (port 1:1 de `emails/trans/mastersigned.blade.php`). #}
+{# Incluye estilos + header + content yield + footer firmado (email_footer). #}
+<!DOCTYPE html>
+<html lang="{{ locale | default('es', true) }}">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% include "Emails/Trans/Styles/basic.html.j2" %}
+</head>
+
+<body style="font-size:14px;font-family:Arial,serif;">
+<div id="app">
+    {# init header. `is defined` evita explotar con StrictUndefined. #}
+    <div>
+        <br/>
+        {% if logo_cid is defined and logo_cid %}
+            <img style="height: 50px; margin-left: -5px;" src="cid:{{ logo_cid }}" alt="logo"/>
+        {% endif %}
+        <br/>
+        <br/>
+    </div>
+    {# end header #}
+
+    {# init content #}
+    <div>
+        {% block content %}{% endblock %}
+    </div>
+    {# end content #}
+
+    {% include "Emails/Trans/Footer/email_footer.html.j2" %}
+</div>
+
+</body>
+</html>

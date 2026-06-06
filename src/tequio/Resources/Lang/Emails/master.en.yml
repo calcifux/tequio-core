@@ -1,0 +1,14 @@
+# Translations EN for `Emails/Trans/master.html.j2`.
+# 1:1 port of legacy `resources/lang/en/emails/master.php`.
+en:
+  faq_message: |
+    <br/>
+    <br/>
+    <br/>
+    Contact us if you have any questions.
+    <br/>
+    %{app_name}
+    <br/>
+    %{contact_phone}
+  welcome_message: 'Welcome to %{app_name}.'
+  welcome_message_subject: 'Welcome to %{app_name}'

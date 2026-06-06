@@ -1,0 +1,15 @@
+"""Tus modelos (un archivo por modelo, estilo Eloquent `app/Models`).
+
+Auto-import: este __init__ escanea e importa TODOS los modelos de la carpeta al
+cargarse (pkgutil), para que SQLAlchemy resuelva las relaciones por string sin depender
+del orden de imports. Agregar un modelo = crear su archivo; este __init__ no se toca.
+"""
+
+from __future__ import annotations
+
+import importlib
+import pkgutil
+
+for _module_info in pkgutil.iter_modules(__path__):
+    if not _module_info.name.startswith("_"):
+        importlib.import_module(f"{__name__}.{_module_info.name}")

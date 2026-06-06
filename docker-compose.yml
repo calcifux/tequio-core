@@ -1,0 +1,45 @@
+# Docker solo levanta INFRAESTRUCTURA. La app (CLI, Celery worker/beat) corre
+# en el HOST con uv. La BD por default es sqlite (archivo local, sin contenedor);
+# si usas MySQL/Postgres/etc., ese contenedor va aparte.
+#
+#   docker compose up -d        # levanta redis + rabbitmq + mailpit
+#   Mailpit UI:    http://localhost:8025
+#   RabbitMQ UI:   http://localhost:15672  (guest/guest)
+name: tequio-core
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: tequio-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+  # Broker MQ alternativo (broker-agnostic): para probar BROKER_URL=amqp://...
+  # Es el broker de referencia de Celery. ActiveMQ NO es compatible (AMQP 1.0);
+  # por eso el "MQ local" es RabbitMQ.
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: tequio-rabbitmq
+    ports:
+      - "5672:5672"     # AMQP (BROKER_URL=amqp://guest:guest@localhost:5672//)
+      - "15672:15672"   # management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    restart: unless-stopped
+
+  # SMTP de desarrollo: los crons/jobs que mandan correo entregan aquí y los ves
+  # en la UI web (nada sale a internet). La pareja del driver real de Mail.
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: tequio-mailpit
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"  # SMTP (la app envía aquí)
+      - "${MAILPIT_UI_PORT:-8025}:8025"    # interfaz web para ver correos
+    restart: unless-stopped
+
+volumes:
+  redis-data:

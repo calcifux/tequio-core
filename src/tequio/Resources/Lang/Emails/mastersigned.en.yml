@@ -1,0 +1,35 @@
+# Translations EN for `emails/trans/mastersigned.html.j2` (1:1 port of legacy
+# `resources/lang/en/emails/mastersigned.php`).
+en:
+  privacy_message: |
+    <p class="MsoNormal" style="margin-bottom:0cm;text-align:justify;line-height:normal"><span style="color:#000000"><strong><span lang="EN-US" style="font-size:8pt;font-family:Arial,sans-serif">CONFIDENTIALITY
+            AND PRIVACY.</span></strong><span lang="EN-US" style="font-size:8pt;font-family:Arial,sans-serif">&nbsp;This
+          email, including the information and any file attached
+          thereto (the "<strong>E-Mail</strong>"), is confidential
+          and privileged information in the custody and/or property
+          of&nbsp;<strong>%{app_name}</strong>, its affiliates and, in some
+          cases, its officers or employees, for the exclusive use of
+          the recipients thereof. This&nbsp;<strong>E-Mail</strong>&nbsp;is
+          protected by law and its improper, negligent or fraudulent
+          use is subject to legal sanctions. If you have received
+          this&nbsp;<strong>E-Mail</strong>&nbsp;in error, you are prohibited
+          from disclosing, disseminating, retransmitting, altering,
+          using, printing or copying part or all of it or its
+          contents, and you must:&nbsp;<strong>(i)</strong>&nbsp;immediately
+          inform the sender of the error and&nbsp;<strong>(ii)</strong>&nbsp;permanently
+          delete the&nbsp;<strong>E-Mail</strong>&nbsp;and any forwarding of
+          it. The opinions contained in the&nbsp;<strong>E-Mail</strong>&nbsp;
+          are those of the sender and do not necessarily represent
+          the opinion of %{app_name}. Any offer and/or acceptance of
+          business proposals, agreements, contracts or other acts
+          that may result in any legal obligation for %{app_name} must be
+          confirmed in writing and signed by an authorized officer,
+          except where there is a valid prior written agreement
+          authorizing this medium for such purposes. Also, for
+          information regarding our Comprehensive Privacy Notice,
+          please refer to our website&nbsp;</span><span style="font-size:8pt;font-family:Arial,sans-serif"><a style="color:#000000" href="https://www.example.com/" target="_blank"><span lang="EN-US">www.example.com</span></a></span><span lang="EN-US" style="font-size:6pt;font-family:Arial,sans-serif">.</span></span>
+    </p>
+  sign_message: '%{sender_name}'
+  sign_message_data_phone: '%{sender_phone}'
+  sign_message_data_email: '%{sender_email}'
+  sign_message_data_address: '%{sender_address}'

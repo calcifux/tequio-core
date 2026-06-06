@@ -1,0 +1,90 @@
+site_name: tequio
+site_description: >-
+  Núcleo de trabajo en segundo plano (Celery + SQLAlchemy + Typer) estilo milpa,
+  para servicios worker-side: daemons, pipelines de datos, monitores y ETLs sin capa HTTP.
+site_author: "@Calcifux"
+repo_url: https://github.com/calcifux/tequio-core
+repo_name: calcifux/tequio-core
+copyright: "tequio · MIT"
+
+# El sitio se construye desde la guía en documentation/ (igual que milpa).
+docs_dir: documentation
+
+theme:
+  name: material
+  language: es
+  icon:
+    logo: material/handshake
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - toc.follow
+  palette:
+    # Paleta StackCraft (la misma del front MUI/Pico del demo de milpa):
+    # Forge #FF6B1A (primary) · Spark #FF8A4D (accent/hover). Los hex exactos
+    # no existen como colores nombrados de Material, así que van como `custom`
+    # + variables CSS en stylesheets/extra.css.
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Cambiar a oscuro
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Cambiar a claro
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.details
+
+nav:
+  - Inicio: README.md
+  - Primeros pasos:
+      - Introducción: 01-introduccion.md
+      - Instalación: 02-instalacion.md
+      - Configuración: 03-configuracion.md
+      - Estructura de directorios: 04-estructura-directorios.md
+      - Ciclo de vida: 05-ciclo-de-vida.md
+  - Arquitectura:
+      - Monolito modular: 06-monolito-modular.md
+      - Errores de dominio: 19-errores.md
+  - Consola:
+      - jornal: 07-consola-jornal.md
+  - Base de datos:
+      - Base de datos: 08-base-de-datos.md
+      - Modelos: 09-modelos.md
+      - Repositorios y transacciones: 10-repositorios-y-transacciones.md
+      - Filtrado y paginación: 11-filtrado-y-paginacion.md
+  - Background:
+      - Jobs (@job): 12-jobs.md
+      - Colas y tareas: 13-colas-y-tareas.md
+      - Programación (cron): 14-programacion-cron.md
+  - Patrones (estilo milpa):
+      - Eventos y Observers: 15-eventos-y-observers.md
+      - Mediator (command bus): 16-mediator.md
+      - Pipeline: 17-pipeline.md
+  - Más:
+      - Correo: 20-correo.md
+      - Logging: 18-logging.md

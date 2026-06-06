@@ -1,0 +1,37 @@
+name: Docs
+
+# Publica la guía (documentation/) como sitio MkDocs Material en GitHub Pages en cada push a main.
+# Requiere (una sola vez): Settings → Pages → Source = "Deploy from a branch" → rama "gh-pages".
+on:
+  push:
+    branches: [main]
+    paths:
+      - "documentation/**"
+      - "mkdocs.yml"
+      - ".github/workflows/docs.yml"
+
+permissions:
+  contents: write # gh-deploy publica el sitio en la rama gh-pages
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Instalar uv (con Python 3.14 + caché)
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          python-version: "3.14"
+          enable-cache: true
+
+      - name: Instalar dependencias de docs
+        run: uv sync --group docs
+
+      - name: Construir y publicar en gh-pages
+        run: uv run mkdocs gh-deploy --force --no-history

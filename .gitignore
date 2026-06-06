@@ -1,0 +1,32 @@
+# Entorno Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Caches de herramientas (se regeneran solas; NO se versionan).
+.import_linter_cache/
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+.claude/settings.local.json
+
+# Secretos y configuración local (NUNCA al repo)
+.env
+
+# Logs (no versionamos contenido, sí la carpeta)
+logs/*
+!logs/.gitkeep
+
+# BD sqlite local (p. ej. DATABASE_URL=sqlite:///tequio.db)
+*.db
+*.sqlite3
+
+# Artefactos de build
+dist/
+
+# Sitio de docs generado por `mkdocs build` (se publica con gh-deploy; NO se versiona).
+site/
+
+# Artefacto runtime del beat de Celery (shelve que persiste el schedule; se regenera solo)
+celerybeat-schedule*

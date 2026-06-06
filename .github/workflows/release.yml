@@ -1,0 +1,54 @@
+name: Release (PyPI)
+
+# Publica tequio-core a PyPI cuando empujas un tag de versión (p. ej. `git tag v0.1.0 && git push --tags`).
+# Usa Trusted Publishing (OIDC): NO hay tokens ni secretos — PyPI confía en este workflow.
+# Requisito una sola vez: configurar el "pending publisher" en PyPI para el proyecto tequio-core.
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  release:
+    name: Build + Publish (Trusted Publishing OIDC)
+    runs-on: ubuntu-latest
+    # 'environment' protege el publish: puedes exigir aprobación manual en Settings → Environments.
+    environment: pypi
+    permissions:
+      id-token: write # OBLIGATORIO para OIDC (Trusted Publishing, sin tokens)
+      contents: read # con un bloque permissions explícito, GitHub recorta el resto a 'none'
+    env:
+      DATABASE_URL: "sqlite://"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Instalar uv (Python 3.14 + caché)
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          python-version: "3.14"
+          enable-cache: true
+
+      - name: Sincronizar dependencias (reproducible con el lock)
+        run: uv sync --frozen
+
+      # --- Los guardrails ANTES de publicar: no se publica algo roto ---
+      - name: Ruff format
+        run: uv run ruff format --check .
+      - name: Ruff lint
+        run: uv run ruff check .
+      - name: Mypy
+        run: uv run mypy
+      - name: Import-linter
+        run: uv run lint-imports
+      - name: Pytest
+        run: uv run pytest
+
+      - name: Construir sdist + wheel
+        run: uv build --no-sources
+
+      # uv detecta el OIDC de GitHub Actions y publica vía Trusted Publishing (sin tokens).
+      # (el default es --trusted-publishing automatic; no se pasa flag).
+      # Tip primer release: si falla el OIDC, cambia temporalmente a
+      # `uv publish --trusted-publishing always` para ver el error exacto.
+      - name: Publicar a PyPI
+        run: uv publish
