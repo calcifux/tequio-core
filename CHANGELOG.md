@@ -7,6 +7,30 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-06-06
+
+### Añadido
+
+- **Fachada pública perezosa** (`from tequio import job, cron_task, celery_app, …`): la API
+  estable en un import plano (PEP 562). `import tequio` a secas queda SIN efectos colaterales
+  —no instancia Celery ni lee el `.env` hasta que pides un símbolo— y las rutas profundas
+  (`from tequio.Core.Jobs import job`) siguen siendo válidas.
+- **`py.typed`** (PEP 561): el paquete es mypy-strict pero no publicaba sus tipos; ahora los
+  consumidores reciben los type hints completos en mypy y el IDE.
+- **Metadata de PyPI**: trove classifiers, keywords y `[project.urls]` — la página del paquete
+  ahora tiene links a repo, docs, changelog e issues, y es filtrable por classifier.
+
+### Corregido
+
+- **El sdist filtraba archivos del IDE** (`.idea/` con rutas locales y config de DataGrip):
+  `.idea/` no estaba en el `.gitignore` raíz y hatchling arma el sdist según ese archivo.
+  Doble candado: `.gitignore` actualizado **y** allowlist explícita
+  `[tool.hatch.build.targets.sdist]` (el sdist ahora solo lleva `src/tequio`, README, LICENSE
+  y CHANGELOG — fuera también `Tests/`, `documentation/`, `uv.lock` y demás cruft de dev).
+  **El release 0.1.1 queda yanked en PyPI por esto.**
+- Skeleton: el `pyproject.toml.tmpl` que genera `tequio new` aún decía que tequio-core "no
+  está publicado en PyPI" (lo está desde 0.1.0).
+
 ## [0.1.1] - 2026-06-06
 
 ### Corregido
@@ -118,5 +142,7 @@ fronteras lo mantiene así.
 - Todo es **síncrono** (SQLAlchemy + Celery). Los tests corren **sin base de datos** (fakes +
   monkeypatch) y el toolchain de gates es ruff + mypy strict + import-linter + pytest.
 
-[Unreleased]: https://github.com/calcifux/tequio-core/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/calcifux/tequio-core/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/calcifux/tequio-core/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/calcifux/tequio-core/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/calcifux/tequio-core/releases/tag/v0.1.0

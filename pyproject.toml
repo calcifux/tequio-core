@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tequio-core"
-version = "0.1.1"
+version = "0.1.2"
 description = "Núcleo de trabajo en segundo plano estilo milpa: jobs, crons, eventos y BD (Celery + SQLAlchemy + Typer) sin capa HTTP."
 # El README es la descripción larga que muestra PyPI (sin esto, la página del
 # paquete sale vacía: "has not provided a project description").
@@ -15,6 +15,17 @@ authors = [{ name = "@Calcifux (Carlos Guillermo Reyes Ramiro)" }]
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.14"
+# Trove classifiers: la página de PyPI los muestra y permite filtrar por ellos.
+# Sin "License ::" a propósito: con `license = "MIT"` (SPDX, PEP 639) está deprecado.
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Framework :: Celery",
+    "Typing :: Typed",
+]
+keywords = ["celery", "jobs", "cron", "background-tasks", "worker", "sqlalchemy", "milpa"]
 dependencies = [
     "alembic>=1.18.4",
     "celery[redis]>=5.6.3",
@@ -43,6 +54,14 @@ postgres = ["psycopg[binary]>=3.2"]  # PostgreSQL (psycopg v3, binario: sin libp
 oracle = ["oracledb>=2.5"]           # Oracle (reemplaza al viejo cx_Oracle)
 mssql = ["pyodbc>=5.2"]              # SQL Server (requiere el ODBC Driver del SO)
 
+# Links del sidebar en la página de PyPI (sin esto, la página sale sin un solo link).
+[project.urls]
+Homepage = "https://github.com/calcifux/tequio-core"
+Repository = "https://github.com/calcifux/tequio-core"
+Documentation = "https://calcifux.github.io/tequio-core/"
+Changelog = "https://github.com/calcifux/tequio-core/blob/main/CHANGELOG.md"
+Issues = "https://github.com/calcifux/tequio-core/issues"
+
 # Comando de consola que se instala en el PATH al hacer `pip install tequio-core`.
 [project.scripts]
 tequio = "tequio.Core.Console.Cli:run"
@@ -50,6 +69,13 @@ tequio = "tequio.Core.Console.Cli:run"
 # Qué empaquetar en el wheel: el paquete importable vive en src/tequio.
 [tool.hatch.build.targets.wheel]
 packages = ["src/tequio"]
+
+# Qué empaquetar en el sdist: allowlist EXPLÍCITA (cinturón y tirantes). Sin esta sección
+# hatchling mete todo lo no-gitignoreado: en 0.1.1 se colaron .idea/ (¡con rutas locales!),
+# Tests/, documentation/, uv.lock, docker-compose.yml… Un sdist publicable solo necesita
+# lo que hace falta para CONSTRUIR el wheel.
+[tool.hatch.build.targets.sdist]
+only-include = ["src/tequio", "README.md", "LICENSE", "CHANGELOG.md"]
 
 [dependency-groups]
 dev = [

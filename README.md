@@ -114,6 +114,31 @@ Todo es **OPT-IN** y auto-descubrible (no estorba si no lo usas):
 
 ---
 
+## 📦 API pública
+
+La superficie estable vive en la **fachada raíz** — un import plano con lo que el demo y esta guía
+enseñan:
+
+```python
+from tequio import (
+    job, cron_task, daily, hourly,          # background: jobs on-demand y crons
+    celery_app, broker_guard, retry_policy, # Celery: la app, guarda de broker y reintentos
+    Mail, Mailable, MailContent,            # correo
+    Observer, dispatch, handles, send,      # eventos (1:N) y mediator (1:1)
+    Pipeline, Pipe,                         # modelo cebolla
+    Repository, Factory, Seeder, faker,     # datos estilo Spring Data
+    Base, current_session, transactional,
+    console_command, settings,              # consola y config tipada
+)
+```
+
+La fachada es **perezosa** (PEP 562): `import tequio` a secas no instancia Celery ni lee tu `.env`
+— cada símbolo se resuelve al primer acceso. Las rutas profundas (`from tequio.Core.Jobs import job`)
+siguen siendo válidas; la fachada solo re-exporta. El paquete publica `py.typed` (PEP 561), así que
+mypy/tu IDE reciben los tipos completos en cualquiera de las dos formas.
+
+---
+
 ## 🎮 El demo (`tequio new --demo`)
 
 `--demo` materializa un módulo de referencia **corrible** (notas, **worker-side**) que ejercita TODO

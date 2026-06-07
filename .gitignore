@@ -30,3 +30,9 @@ site/
 
 # Artefacto runtime del beat de Celery (shelve que persiste el schedule; se regenera solo)
 celerybeat-schedule*
+
+# IDEs y SO (¡también afecta al sdist!: hatchling excluye según ESTE archivo;
+# sin estas líneas, .idea/ se colaba al .tar.gz publicado en PyPI — pasó en 0.1.1)
+.idea/
+.vscode/
+.DS_Store
