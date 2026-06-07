@@ -45,3 +45,24 @@ def broker_guard() -> Iterator[None]:
             "y un worker consumiendo (`queue work`). Si no quieres encolar, usa el camino SÍNCRONO "
             "(p. ej. `Mail.send` en vez de `Mail.queue`)."
         ) from error
+
+
+def qualified_queue(name: str | None) -> str | None:
+    """Aplica el QUEUE_NAMESPACE a un nombre de cola para convivir en un broker compartido.
+
+    Resolvedor ÚNICO: todo call-site que pase un `queue=` explícito (enqueue_mail, Job.dispatch,
+    el despacho de crons en `schedule run`, las entradas del beat, el worker `queue work --queue`)
+    pasa por aquí, para que el prefijo se aplique en UN solo lugar y de forma consistente.
+
+    Sin namespace (`settings.queue_namespace == ""`): pasa `name` TAL CUAL — comportamiento de
+    siempre, 100% retrocompatible. Con namespace:
+      - `None` -> `None`: la cola por defecto NO se prefija aquí; la aísla `task_default_queue`
+        (= f"{ns}.celery", ver CeleryApp.py), que también cubre los despachos SIN `queue=`
+        (events.handle, Mail.queue sin cola, jobs/crons a la default).
+      - nombre explícito -> f"{ns}.{name}": el dev sigue tecleando 'emails' y termina en
+        'miapp.emails' dentro del MISMO db (sobrevive en Redis Cluster, a diferencia del db-por-app).
+    """
+    ns = settings.queue_namespace
+    if not ns or name is None:
+        return name
+    return f"{ns}.{name}"

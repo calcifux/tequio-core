@@ -23,7 +23,7 @@ from typing import Any
 from celery import Task
 from loguru import logger
 
-from tequio.Core.CeleryApp import broker_guard, celery_app, retry_policy
+from tequio.Core.CeleryApp import broker_guard, celery_app, qualified_queue, retry_policy
 from tequio.Core.Mail.Mailable import Mailable
 from tequio.Core.Mail.Mailer import mailer as default_mailer
 from tequio.Core.Translate import current_locale, set_request_locale
@@ -131,6 +131,7 @@ def enqueue_mail(
     # restaura antes de build() (= Laravel captura el locale al encolar el Mailable).
     locale = current_locale()
     # broker_guard: si redis no está, error claro en vez del stacktrace de kombu.
+    # qualified_queue: aplica el QUEUE_NAMESPACE (bus compartido) si hay; sin él, queue tal cual.
     with broker_guard():
         send_mail_task.apply_async(
             kwargs={
@@ -141,7 +142,7 @@ def enqueue_mail(
                 "bcc": bcc,
                 "locale": locale,
             },
-            queue=queue,
+            queue=qualified_queue(queue),
         )
 
 

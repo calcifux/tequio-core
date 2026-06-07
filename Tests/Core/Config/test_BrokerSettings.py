@@ -28,3 +28,13 @@ def test_visibility_timeout_only_for_redis_and_sqs() -> None:
     assert Settings(broker_url="redis://r/0").broker_uses_visibility_timeout is True
     assert Settings(broker_url="sqs://k:s@").broker_uses_visibility_timeout is True
     assert Settings(broker_url="amqp://guest@localhost//").broker_uses_visibility_timeout is False
+
+
+def test_queue_namespace_defaults_empty() -> None:
+    """Default vacío = comportamiento de siempre (sin prefijo de colas), 100% retrocompatible."""
+    assert Settings().queue_namespace == ""
+
+
+def test_queue_namespace_reads_explicit_value() -> None:
+    """Se puede fijar (env QUEUE_NAMESPACE) para convivir en un broker compartido."""
+    assert Settings(queue_namespace="miapp").queue_namespace == "miapp"

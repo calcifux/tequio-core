@@ -38,6 +38,14 @@ celery_app.conf.update(
 if settings.broker_uses_visibility_timeout:
     celery_app.conf.broker_transport_options = {"visibility_timeout": settings.redis_visibility_timeout}
 
+# QUEUE_NAMESPACE: en un broker COMPARTIDO, mueve la cola por defecto de 'celery' a
+# f"{ns}.celery" para que dos apps en el mismo redis db NO se roben las tasks SIN cola
+# explícita (events.handle, Mail.queue sin cola, jobs/crons a la default). Las colas
+# con nombre las prefija qualified_queue en cada call-site; ésta cubre el resto. Sin
+# namespace NO se toca conf: la default 'celery' de Celery queda intacta (retrocompatible).
+if settings.queue_namespace:
+    celery_app.conf.task_default_queue = f"{settings.queue_namespace}.celery"
+
 
 @celery_app.on_after_configure.connect
 def _discover_modules(sender: Celery, **_: Any) -> None:

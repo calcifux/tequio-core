@@ -8,6 +8,10 @@ el correo se vuelca al log sin SMTP; con `mailpit` (docker compose) se ve en su 
 
 Se auto-registra (el discovery importa todo el árbol del módulo) y lo despacha `schedule run`;
 distinto de los jobs (Jobs/): los crons los AGENDA el scheduler, no los disparas tú.
+
+`environments=("local", "development")` es un CINTURÓN: aunque alguien apuntara MODULES_PACKAGE
+al Demo del framework en producción (app_env "qa"/"production"), el digest NO se agenda ni corre
+ahí — el gate de entorno de `@cron_task` lo omite. El Demo es ejemplo de dev, no carga de prod.
 """
 
 from __future__ import annotations
@@ -25,7 +29,12 @@ from tequio.Modules.Demo.Repositories.NoteRepository import NoteRepository
 _DIGEST_TO = "admin@example.com"
 
 
-@cron_task(name="demo.daily_digest", schedule=daily_at("08:00"), output="demo_digest")
+@cron_task(
+    name="demo.daily_digest",
+    schedule=daily_at("08:00"),
+    environments=("local", "development"),
+    output="demo_digest",
+)
 def daily_digest() -> None:
     """Corre en el WORKER cada día a las 8:00 (lo despacha `schedule run`)."""
     total = len(NoteRepository().all())

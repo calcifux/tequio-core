@@ -158,7 +158,13 @@ def cron_task(
 
                 # withoutOverlapping(): lock en Redis; el timeout evita deadlock si el
                 # worker muere a media corrida. blocking=False -> si está tomado, se omite.
-                lock = _get_redis().lock(f"cron-lock:{name}", timeout=effective_lock_timeout, blocking=False)
+                # Con QUEUE_NAMESPACE (bus compartido) la key se namespacea a
+                # cron-lock:{ns}:{name} para que dos apps en el mismo redis NO compartan el
+                # lock de un cron homónimo; sin ns, la key actual (cron-lock:{name}) intacta.
+                # El lock vive en effective_lock_url (redis), independiente del broker.
+                ns = settings.queue_namespace
+                lock_key = f"cron-lock:{ns}:{name}" if ns else f"cron-lock:{name}"
+                lock = _get_redis().lock(lock_key, timeout=effective_lock_timeout, blocking=False)
                 try:
                     acquired = lock.acquire(blocking=False)
                 except redis.ConnectionError as error:

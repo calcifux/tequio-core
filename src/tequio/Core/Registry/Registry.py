@@ -174,7 +174,9 @@ def collect_beat_schedule() -> dict[str, object]:
     # Import DIFERIDO (no a nivel de módulo): Cron importa CeleryApp y CeleryApp
     # importa este Registry, así que importar Cron arriba cerraría el ciclo. Igual
     # que el discovery, esto se resuelve cuando la función corre (Celery ya
-    # configurado), con todo el árbol cargado.
+    # configurado), con todo el árbol cargado. qualified_queue (Core/CeleryApp) va
+    # diferido por la misma razón: CeleryApp importa este Registry.
+    from tequio.Core.CeleryApp import qualified_queue
     from tequio.Core.Cron import registered_crons, to_crontab
 
     schedule: dict[str, object] = {}
@@ -183,7 +185,9 @@ def collect_beat_schedule() -> dict[str, object]:
     for rc in registered_crons():
         entry: dict[str, object] = {"task": rc.name, "schedule": to_crontab(rc.schedule)}
         if rc.queue is not None:
-            entry["options"] = {"queue": rc.queue}
+            # qualified_queue aplica el QUEUE_NAMESPACE (bus compartido) si hay; igual que el
+            # apply_async(queue=...) de `schedule run`, pero para la vía beat.
+            entry["options"] = {"queue": qualified_queue(rc.queue)}
         schedule[rc.name] = entry
     # (2) Kernel.py por módulo, AL FINAL: precedencia en colisión de nombre.
     for package in module_packages():

@@ -21,7 +21,7 @@ from typing import Any
 
 from celery import Task
 
-from tequio.Core.CeleryApp import broker_guard, celery_app, retry_policy
+from tequio.Core.CeleryApp import broker_guard, celery_app, qualified_queue, retry_policy
 
 
 class Job:
@@ -35,9 +35,12 @@ class Job:
 
     def dispatch(self, *args: Any, queue: str | None = None, **kwargs: Any) -> Any:
         """Encola el job en Celery. `broker_guard`: si el broker no responde, lanza
-        `QueueUnavailableError` (503) en vez del stacktrace de kombu. = `Job::dispatch`."""
+        `QueueUnavailableError` (503) en vez del stacktrace de kombu. = `Job::dispatch`.
+        `qualified_queue`: aplica el QUEUE_NAMESPACE (bus compartido) si hay; sin él, intacta."""
         with broker_guard():
-            return self._task.apply_async(args=list(args), kwargs=kwargs, queue=queue or self._default_queue)
+            return self._task.apply_async(
+                args=list(args), kwargs=kwargs, queue=qualified_queue(queue or self._default_queue)
+            )
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         """Corre el job SÍNCRONO, en el proceso actual (no encola). Útil en tests."""

@@ -84,3 +84,40 @@ def test_non_windows_omits_pool_by_default(monkeypatch: MonkeyPatch, platform: s
 
     assert result.exit_code == 0
     assert "--pool" not in captured["argv"]
+
+
+def test_queue_list_passes_through_without_namespace(monkeypatch: MonkeyPatch) -> None:
+    """Sin QUEUE_NAMESPACE, `--queue emails,celery` llega a -Q tal cual — retrocompatible."""
+    monkeypatch.setattr(settings, "queue_namespace", "")
+    captured = _capture_worker_main(monkeypatch)
+
+    result = CliRunner().invoke(_queue_app(), ["work", "--queue", "emails,celery"])
+
+    assert result.exit_code == 0
+    argv = captured["argv"]
+    assert argv[argv.index("-Q") + 1] == "emails,celery"
+
+
+def test_queue_list_is_qualified_per_name_with_namespace(monkeypatch: MonkeyPatch) -> None:
+    """Con QUEUE_NAMESPACE se prefija CADA nombre de la lista (el dev sigue tecleando
+    'emails,celery'); se preserva el split por coma y el orden -> 'miapp.emails,miapp.celery'."""
+    monkeypatch.setattr(settings, "queue_namespace", "miapp")
+    captured = _capture_worker_main(monkeypatch)
+
+    result = CliRunner().invoke(_queue_app(), ["work", "--queue", "emails,celery"])
+
+    assert result.exit_code == 0
+    argv = captured["argv"]
+    assert argv[argv.index("-Q") + 1] == "miapp.emails,miapp.celery"
+
+
+def test_queue_omitted_is_not_passed(monkeypatch: MonkeyPatch) -> None:
+    """Sin `--queue` (None) no se agrega -Q ni con namespace: el worker consume la cola por
+    defecto (que con ns la fija task_default_queue)."""
+    monkeypatch.setattr(settings, "queue_namespace", "miapp")
+    captured = _capture_worker_main(monkeypatch)
+
+    result = CliRunner().invoke(_queue_app(), ["work"])
+
+    assert result.exit_code == 0
+    assert "-Q" not in captured["argv"]

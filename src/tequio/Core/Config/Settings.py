@@ -68,6 +68,18 @@ class Settings(BaseSettings):
     # deriva de aquí para garantizar `lock_timeout > visibility_timeout` por construcción.
     redis_visibility_timeout: int = 3600
 
+    # Namespace de COLAS para convivir en un BROKER COMPARTIDO. Vacío (default) = el de
+    # siempre, 100% retrocompatible. El porqué: dos apps apuntando al MISMO redis db se
+    # ROBAN tasks entre sí — la cola por defecto ('celery') y las tasks framework-wide
+    # (mail.send, events.handle) están registradas en TODAS, así que un worker ajeno
+    # consume la task de otra app y la corre con SU config (ejecución cruzada silenciosa)
+    # o la rebota como "unregistered" (corrida perdida). El db-por-app mitiga, pero muere
+    # en Redis Cluster (solo db 0). Con un namespace, cada app vive en SUS colas
+    # (f"{ns}.celery", f"{ns}.emails", ...) dentro del mismo db: aislamiento que SÍ
+    # sobrevive en Cluster. El prefijo lo aplica un resolvedor único (qualified_queue,
+    # en Core/CeleryApp/Dispatch.py) y el lock de cron se namespacea igual (cron-lock:{ns}:).
+    queue_namespace: str = ""
+
     # --- Reintentos de tasks (defaults framework-wide; backoff exponencial con jitter) ---
     # Son los DEFAULTS de `retry_policy(...)` (app/Core/CeleryApp). Se pueden fijar por .env
     # O sobreescribir A MANO en código al declarar cada task. Solo afectan a tasks que OPTAN
@@ -121,14 +133,18 @@ class Settings(BaseSettings):
     # --- Layout del PROYECTO: DÓNDE vive el código del USUARIO ---
     # tequio instalado como paquete NO puede adivinar dónde está tu proyecto contando
     # carpetas desde sí mismo (en site-packages eso apunta a otro lado). Lo lee de aquí.
-    # Los DEFAULTS = el layout de ESTE repo, así no se rompe nada si no configuras.
-    # Un proyecto EXTERNO los apunta a su propio paquete/carpetas vía .env:
+    # Los DEFAULTS = el layout que genera `tequio new` (app.*), que es lo que tiene el
+    # USUARIO: así una instalación SIN .env apunta al código del usuario, no al nuestro.
+    # OJO el porqué: si el default apuntara a NUESTRO paquete, el Demo EMPAQUETADO se
+    # auto-descubriría en cualquier instalación y un usuario sin configurar agendaría el
+    # cron del Demo en SU broker. El dev que trabaja DENTRO de este repo (su código vive
+    # en src/<pkg>, no en app/) re-apunta estos paquetes vía .env / Tests/conftest.py.
     #   MODULES_PACKAGE=app.Modules   MODELS_PACKAGE=app.Models
     #   USER_VIEWS_DIR=app/Resources/Views   MIGRATIONS_DIR=migrations  ...
     # Paquetes (notación punteada, importables):
-    modules_package: str = "tequio.Modules"  # dónde escanear los módulos (rutas/jobs/crons/seeders/i18n/vistas)
-    models_package: str = "tequio.Models"  # dónde viven los modelos (se cargan en Base.metadata)
-    app_commands_package: str = "tequio.Console.Commands"  # commands GENERALES del proyecto (opcional; tolera ausencia)
+    modules_package: str = "app.Modules"  # dónde escanear los módulos (rutas/jobs/crons/seeders/i18n/vistas)
+    models_package: str = "app.Models"  # dónde viven los modelos (se cargan en Base.metadata)
+    app_commands_package: str = "app.Console.Commands"  # commands GENERALES del proyecto (opcional; tolera ausencia)
     # Carpetas de recursos del USUARIO (relativas al cwd del proyecto). "" => no se usan
     # (en ESTE repo van vacías: las vistas/lang del framework salen del paquete).
     user_views_dir: str = ""  # p. ej. "app/Resources/Views" en un proyecto externo

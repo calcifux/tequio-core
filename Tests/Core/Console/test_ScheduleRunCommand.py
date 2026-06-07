@@ -14,6 +14,7 @@ import pytest
 from pytest import MonkeyPatch
 
 from tequio.Core.Clock import SystemClock
+from tequio.Core.Config import settings
 from tequio.Core.Console.Commands.ScheduleRunCommand import schedule_run
 from tequio.Core.Cron import cron_task, every_minute, registered_crons, reset_cron_registry
 
@@ -83,3 +84,22 @@ def test_routes_to_the_declared_queue(monkeypatch: MonkeyPatch) -> None:
     schedule_run()
 
     assert captured["queue"] == "emails"  # se despacha a su cola (= ->onQueue('emails'))
+
+
+def test_routes_to_namespaced_queue_with_namespace(monkeypatch: MonkeyPatch) -> None:
+    """Con QUEUE_NAMESPACE, el despacho del cron prefija su cola ('emails' -> 'miapp.emails'),
+    para que dos apps en el mismo broker no compartan la cola del cron."""
+    monkeypatch.setattr(settings, "queue_namespace", "miapp")
+
+    @cron_task(name="test.emails.ns", schedule=every_minute(), queue="emails")
+    def email_task() -> str:
+        return "ran"
+
+    captured: dict[str, str | None] = {}
+    cron = registered_crons()[0]
+    monkeypatch.setattr(cron.task, "apply_async", lambda queue=None, **kwargs: captured.update(queue=queue))
+    _freeze_now(monkeypatch, datetime(2026, 5, 29, 10, 30, 0))
+
+    schedule_run()
+
+    assert captured["queue"] == "miapp.emails"  # cola del cron namespaceada

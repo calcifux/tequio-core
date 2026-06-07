@@ -161,3 +161,29 @@ def test_enqueue_without_init_kwargs_passes_for_no_arg_mailables(monkeypatch: Mo
     enqueue_mail(_SinArgs(), to=["a@example.com"])
 
     assert captured["kwargs"]["mailable_kwargs"] == {}
+
+
+# ---------------------------------------------------------------- QUEUE_NAMESPACE (bus compartido)
+
+
+def test_enqueue_mail_qualifies_queue_with_namespace(monkeypatch: MonkeyPatch) -> None:
+    """Con QUEUE_NAMESPACE, la cola del correo se prefija ('emails' -> 'miapp.emails') para
+    que dos apps en el mismo broker no compartan la cola de correos. Capturamos apply_async."""
+    monkeypatch.setattr(settings, "queue_namespace", "miapp")
+    captured: dict[str, Any] = {}
+    monkeypatch.setattr(Tasks.send_mail_task, "apply_async", lambda *a, **k: captured.update(k))
+
+    enqueue_mail(_SinArgs(), to=["a@example.com"], queue="emails")
+
+    assert captured["queue"] == "miapp.emails"
+
+
+def test_enqueue_mail_leaves_queue_intact_without_namespace(monkeypatch: MonkeyPatch) -> None:
+    """Sin namespace: la cola viaja tal cual ('emails') — retrocompatible."""
+    monkeypatch.setattr(settings, "queue_namespace", "")
+    captured: dict[str, Any] = {}
+    monkeypatch.setattr(Tasks.send_mail_task, "apply_async", lambda *a, **k: captured.update(k))
+
+    enqueue_mail(_SinArgs(), to=["a@example.com"], queue="emails")
+
+    assert captured["queue"] == "emails"

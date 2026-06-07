@@ -14,7 +14,7 @@ import sys
 import typer
 from loguru import logger
 
-from tequio.Core.CeleryApp import celery_app
+from tequio.Core.CeleryApp import celery_app, qualified_queue
 from tequio.Core.Config import settings
 from tequio.Core.Console import console_command
 
@@ -51,7 +51,13 @@ def queue_work(
         logger.info("queue work | Windows detectado: usando pool 'solo' (prefork de billiard no es confiable ahí)")
     argv = ["worker", "--loglevel", loglevel]
     if queue is not None:
-        argv += ["-Q", queue]  # = --queue=emails de Laravel; consume solo esa(s) cola(s)
+        # El dev sigue tecleando 'emails,celery'; con QUEUE_NAMESPACE (bus compartido)
+        # calificamos CADA nombre de la lista para que el worker consuma las colas
+        # namespaced de SU app ('miapp.emails,miapp.celery'). Sin ns, qualified_queue
+        # devuelve cada nombre tal cual: el comportamiento de siempre. Preservamos el
+        # split por coma y el orden que tecleó el dev.
+        queues = ",".join(qualified_queue(name) or name for name in queue.split(","))
+        argv += ["-Q", queues]  # = --queue=emails de Laravel; consume solo esa(s) cola(s)
     if concurrency is not None:
         argv += ["--concurrency", str(concurrency)]
     if pool is not None:

@@ -66,6 +66,21 @@ def test_cron_task_without_schedule_is_not_in_beat() -> None:
     assert "reg.test.noSched" not in collect_beat_schedule()
 
 
+def test_beat_options_queue_is_namespaced_with_namespace(monkeypatch: MonkeyPatch) -> None:
+    """Con QUEUE_NAMESPACE, la entrada del beat enruta a la cola namespaceada
+    ('emails' -> 'miapp.emails'): la vía beat aísla igual que el apply_async de schedule run."""
+    monkeypatch.setattr(settings, "queue_namespace", "miapp")
+
+    @cron_task(name="reg.test.q.ns", schedule=every_minute(), queue="emails")
+    def task_q() -> str:
+        return "ran"
+
+    entry = collect_beat_schedule()["reg.test.q.ns"]
+
+    assert isinstance(entry, dict)
+    assert entry["options"] == {"queue": "miapp.emails"}
+
+
 # --------------------------------------------------------- precedencia Kernel.py sobre @cron_task
 # Paquete de MÓDULOS sintético (= settings.modules_package). module_packages() escanea sus
 # subpaquetes; cada subpaquete es un módulo, y collect_beat_schedule importa su Console/Kernel.

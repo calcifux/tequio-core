@@ -60,8 +60,9 @@ tabla abajo y se detallan en [Correo](20-correo.md).
 | `RESULT_BACKEND_URL` | `""` → sin backend | Backend de resultados (opcional; crons son fire-and-forget). |
 | `LOCK_URL` | `""` → redis local | Store de locks (redis) para `without_overlapping`. |
 | `REDIS_VISIBILITY_TIMEOUT` | `3600` | Segundos antes de re-entregar una task (solo redis/SQS). |
+| `QUEUE_NAMESPACE` | `""` → sin prefijo | Prefijo de colas para convivir en un **broker compartido** (varias apps en el mismo redis db). Vacío = comportamiento actual. Con valor, la cola por defecto pasa a `<ns>.celery` y las nombradas a `<ns>.<cola>`. |
 
-Ver [Colas y tareas](13-colas-y-tareas.md).
+Ver [Colas y tareas](13-colas-y-tareas.md) → *Compartir un broker entre apps*.
 
 ### Reintentos de tasks
 
@@ -120,23 +121,31 @@ Ver [Correo](20-correo.md).
 ### Layout del proyecto
 
 tequio instalado como paquete no puede adivinar dónde vive tu código contando carpetas
-desde sí mismo (en `site-packages` eso apunta a otro lado): lo lee de estas variables. Un
-proyecto generado con `tequio new` ya las trae apuntando a `app/`.
+desde sí mismo (en `site-packages` eso apunta a otro lado): lo lee de estas variables. Los
+defaults apuntan a `app.*` —el layout que genera `tequio new`—, así una instalación limpia
+encuentra TU código sin configurar nada (y, a propósito, **no** auto-descubre el Demo
+EMPAQUETADO del framework).
 
 | Variable | Default | Para qué |
 |----------|---------|----------|
-| `MODULES_PACKAGE` | `tequio.Modules` | Paquete (punteado) donde se escanean los módulos (jobs/crons/seeders/observers…). |
-| `MODELS_PACKAGE` | `tequio.Models` | Paquete donde viven los modelos (se cargan en `Base.metadata`). |
-| `APP_COMMANDS_PACKAGE` | `tequio.Console.Commands` | Commands generales del proyecto (opcional; tolera ausencia). |
+| `MODULES_PACKAGE` | `app.Modules` | Paquete (punteado) donde se escanean los módulos (jobs/crons/seeders/observers…). |
+| `MODELS_PACKAGE` | `app.Models` | Paquete donde viven los modelos (se cargan en `Base.metadata`). |
+| `APP_COMMANDS_PACKAGE` | `app.Console.Commands` | Commands generales del proyecto (opcional; tolera ausencia). |
 | `MIGRATIONS_DIR` | `migrations` | Carpeta de migraciones Alembic, relativa al cwd. |
 | `APP_DIR` | `app` | Raíz donde `make:*` escribe (modelos/jobs/…), relativa al cwd. |
 | `USER_VIEWS_DIR` | `""` | Vistas/plantillas propias de un proyecto externo (ej. `app/Resources/Views`). Vacío = usa las del paquete. |
 | `USER_LANG_DIR` | `""` | Catálogos i18n propios de un proyecto externo (ej. `app/Resources/Lang`). Vacío = usa los del paquete. |
 
 !!! note "En un proyecto creado con `tequio new`"
-    El `.env` generado ya trae `MODULES_PACKAGE=app.Modules`, `MODELS_PACKAGE=app.Models`,
-    `APP_COMMANDS_PACKAGE=app.Console.Commands`, `APP_DIR=app` y `MIGRATIONS_DIR=migrations`.
-    No tocas nada salvo que muevas las carpetas.
+    El `.env` generado ya coincide con estos defaults (`app.Modules` / `app.Models` /
+    `app.Console.Commands` / `APP_DIR=app` / `MIGRATIONS_DIR=migrations`). No tocas nada
+    salvo que muevas las carpetas.
+
+!!! warning "Si trabajas DENTRO de este repo"
+    El código de tequio vive en `src/tequio`, no en `app/`. Para que el discovery encuentre
+    los módulos del framework (el Demo y sus crons/jobs) re-apunta los tres paquetes a
+    `tequio.*` en tu `.env` (lo documenta `.env.example`). En la suite, `Tests/conftest.py`
+    ya hace ese `setdefault` por ti.
 
 ## Propiedades calculadas útiles
 

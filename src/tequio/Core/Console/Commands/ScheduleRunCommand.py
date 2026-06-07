@@ -17,7 +17,7 @@ import typer
 from croniter import croniter
 from loguru import logger
 
-from tequio.Core.CeleryApp import broker_guard
+from tequio.Core.CeleryApp import broker_guard, qualified_queue
 from tequio.Core.Clock import SystemClock
 from tequio.Core.Config import settings
 from tequio.Core.Console import console_command
@@ -44,9 +44,10 @@ def schedule_run() -> None:
         if croniter.match(cron.schedule, now):
             with broker_guard():  # error claro si redis no está
                 if cron.queue is not None:
-                    cron.task.apply_async(queue=cron.queue)  # a su cola (= onQueue de Laravel)
+                    # qualified_queue aplica el QUEUE_NAMESPACE (bus compartido) si hay.
+                    cron.task.apply_async(queue=qualified_queue(cron.queue))  # a su cola (= onQueue de Laravel)
                 else:
-                    cron.task.delay()  # cola por defecto
+                    cron.task.delay()  # cola por defecto (la aísla task_default_queue con ns)
             dispatched.append(cron.name)
 
     logger.info("schedule run | despachados: {n} {names}", n=len(dispatched), names=dispatched)

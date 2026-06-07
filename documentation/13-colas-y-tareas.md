@@ -131,6 +131,67 @@ uv run python jornal queue work --queue exports    # consumidor dedicado
 
 Si nadie consume esa cola, el mensaje se queda ahí hasta que un worker la atienda.
 
+## Compartir un broker entre apps
+
+Pasa en serio: dos servicios distintos apuntan **al mismo redis** (la misma `BROKER_URL`,
+el mismo db) porque "ya estaba ahí". A partir de ese momento las colas son un bus
+**compartido** y empiezan los robos silenciosos.
+
+| Síntoma | Por qué pasa | Qué se ve |
+|---------|--------------|-----------|
+| Una corrida **se pierde** | El worker de la app B saca de la cola un mensaje de la app A cuya task **no conoce**. Celery no puede deserializarla → la **descarta** (`KeyError` / `NotRegistered`). | La task "se ejecutó" (salió de la cola) pero **nunca corrió**. Nadie se entera. |
+| **Ejecución cruzada SILENCIOSA** | `mail.send`, `events.handle` y demás tasks del framework están registradas en **TODAS** las apps tequio/milpa con el **mismo nombre**. El worker de la app B sí la conoce, así que la corre… con **su** config (su SMTP, su BD). | El correo de la app A sale por el servidor de la app B. Sin error. El peor caso: parece que funciona. |
+
+> Esto no es hipotético: le pasó al dueño en la mega-red **aqua**, con varias apps tequio/milpa
+> en el mismo redis. La task desconocida = corrida perdida; `mail.send` registrada en todas =
+> envíos saliendo por la app equivocada.
+
+### El paño tibio: un db por app
+
+Lo primero que uno intenta es darle a cada app **su propio db de redis** (`…/0`, `…/1`, `…/2`
+en la `BROKER_URL`). Funciona… hasta que llegas a **Redis Cluster**, que solo expone el **db
+0**. Ahí todas las apps vuelven a caer en el mismo espacio y el problema regresa. El db-por-app
+es una mitigación de juguete, no una solución durable.
+
+### La solución durable: `QUEUE_NAMESPACE`
+
+Le das a cada app un **prefijo de colas** y deja de existir el cruce: cada worker consume
+**solo lo suyo** dentro del MISMO db (por eso **sobrevive en Redis Cluster**).
+
+```bash
+# app A
+QUEUE_NAMESPACE=ventas
+# app B
+QUEUE_NAMESPACE=reportes
+```
+
+Con un namespace activo (ej. `ventas`):
+
+- La **cola por defecto** pasa de `celery` a `ventas.celery` (vía `task_default_queue`). Esto
+  cubre TODO lo que se despacha **sin** `queue=` explícito: `events.handle`, un `Mail.queue`
+  sin cola, los jobs y crons a la default. Ahí estaba el cruce silencioso de `mail.send`/
+  `events.handle` — y ahí se corta.
+- Las **colas con nombre** se prefijan: `emails` → `ventas.emails`, `reports` → `ventas.reports`.
+  Tú sigues tecleando `emails`; el prefijo lo pone el framework en un solo lugar.
+- El **lock anti-overlapping** de los crons también se namespacea: `cron-lock:<name>` →
+  `cron-lock:ventas:<name>`, para que dos apps con un cron homónimo no compartan lock (ver
+  [Programación (cron)](14-programacion-cron.md)).
+
+Vacío (el **default**) = comportamiento de siempre, **100% retrocompatible**: sin prefijo, las
+keys actuales intactas. No tienes que hacer nada hasta que de verdad compartas un broker.
+
+Arrancar el worker no cambia: tú pides la cola lógica y el framework la califica.
+
+```bash
+# app A (QUEUE_NAMESPACE=ventas) — consume ventas.celery + ventas.emails
+uv run python jornal queue work --queue celery,emails
+```
+
+> Bajo el capó vive un resolvedor único — `qualified_queue(name)` en
+> `tequio/Core/CeleryApp/Dispatch.py` (junto a `broker_guard`) — por el que pasa **cada**
+> call-site que despacha con `queue=` explícito. Un solo lugar aplica el prefijo, así no hay
+> dos reglas distintas regándose por el código.
+
 ## Síncrono vs. encolado
 
 | | Síncrono | Encolado |
