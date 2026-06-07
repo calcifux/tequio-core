@@ -131,6 +131,41 @@ uv run python jornal queue work --queue exports    # consumidor dedicado
 
 Si nadie consume esa cola, el mensaje se queda ahí hasta que un worker la atienda.
 
+### Carriles focalizados: un `queue work` por cola que pesa
+
+La forma tradicional es UN worker genérico consumiendo todas las colas. El estilo
+milpa (heredado de operar `queue:work` por cola en Laravel) es **focalizar**: cada
+carril pesado declara SU cola y un worker dedicado la consume — un proceso lento
+jamás bloquea correos, y `supervisorctl status` te dice de un vistazo qué carril sufre.
+
+```python
+@cron_task(
+    name="cfdi.generate",
+    schedule=every_minutes(10),
+    queue="cfdi-generate",      # cola DEDICADA: solo su worker la consume
+    without_overlapping=True,
+)
+def generate_cfdi_task() -> dict[str, object]: ...
+```
+
+Y en el supervisor del contenedor, un `[program:]` por carril:
+
+```ini
+[program:cfdi-generate]
+command=uv run python jornal queue work --queue cfdi-generate --concurrency 1
+
+[program:worker]
+command=uv run python jornal queue work --queue emails,celery --concurrency 2
+```
+
+`--concurrency 1` en el carril del cron no es tacañería: `without_overlapping` ya
+garantiza UNA corrida a la vez — más hijos ahí serían RAM quemada. Se dimensiona
+**por cola, a conciencia**; el día que un carril crezca, se le crece SOLO a él.
+
+Con `QUEUE_NAMESPACE` (abajo) ambas piezas se namespacean solas: el productor
+encola en `miapp.cfdi-generate` y el `--queue cfdi-generate` del consumidor se
+califica igual — el carril sigue siendo carril en un broker compartido.
+
 ## Compartir un broker entre apps
 
 Pasa en serio: dos servicios distintos apuntan **al mismo redis** (la misma `BROKER_URL`,
