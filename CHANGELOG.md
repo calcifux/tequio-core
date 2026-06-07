@@ -7,6 +7,30 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-06-07
+
+Paridad con milpa 0.6.0 — la primera cosecha del **drift-guard** (la herramienta interna
+que compara el kernel compartido entre hermanos): 17 archivos huérfanos detectados en su
+primera corrida, repartidos entre ambos lados.
+
+### Added
+
+- **`schedule work --schedule-file <ruta>`**: reubica el archivo de estado del beat (`-s` de
+  Celery; default `./celerybeat-schedule` del CWD). En docker con el repo montado, apúntalo a
+  un volumen escribible (p. ej. `/tmp/celerybeat-schedule`).
+- **`TEQUIO_ENV_FILE`**: el `.env` deja de estar clavado al CWD — un beat en contenedor apunta
+  la variable a la ruta real y se acabaron los symlinks.
+- **`auto_session` en la fachada** (`from tequio import auto_session`): el hermano idiomático
+  de `transactional`/`session_scope` faltaba en el import plano.
+
+### Fixed
+
+- **Error accionable del lock store** *(de milpa 0.6.0)*: si `without_overlapping` no puede
+  conectar al LOCK store, el cron truena con instrucción (el default es un redis LOCAL; en
+  docker configura `LOCK_URL=redis://<host>`) en vez de un stacktrace de redis.
+- Prosa restaurada en `Events/` (las referencias a `Mail.queue` volvieron: tequio ya tiene
+  correo desde 0.1.x y los docstrings seguían esquivándolo).
+
 ## [0.1.2] - 2026-06-06
 
 ### Añadido

@@ -159,7 +159,21 @@ def cron_task(
                 # withoutOverlapping(): lock en Redis; el timeout evita deadlock si el
                 # worker muere a media corrida. blocking=False -> si está tomado, se omite.
                 lock = _get_redis().lock(f"cron-lock:{name}", timeout=effective_lock_timeout, blocking=False)
-                if not lock.acquire(blocking=False):
+                try:
+                    acquired = lock.acquire(blocking=False)
+                except redis.ConnectionError as error:
+                    # El LOCK store no respondió. without_overlapping EXIGE ese store (redis):
+                    # sin él no hay forma de garantizar la no-superposición. NO caemos al broker
+                    # (que puede ser RabbitMQ/SQS, sin primitiva de lock) ni lo silenciamos —
+                    # mejor un error accionable que un doble-timbrado sigiloso. Caso típico en
+                    # docker: el default redis LOCAL no existe; hay que apuntar LOCK_URL al host.
+                    raise RuntimeError(
+                        f"cron '{name}': without_overlapping necesita el LOCK store (redis) y no se "
+                        f"pudo conectar a {settings.effective_lock_url}. El default es un redis LOCAL; "
+                        f"en docker configúralo con LOCK_URL=redis://<host>:6379/0 (apuntando al "
+                        f"servicio redis de tu compose), o quita without_overlapping de este cron."
+                    ) from error
+                if not acquired:
                     logger.warning("cron {n}: omitido (la corrida anterior sigue en curso)", n=name)
                     return None
                 try:

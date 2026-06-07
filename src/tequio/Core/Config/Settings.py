@@ -5,6 +5,8 @@ de verdad de secretos/config por-entorno; infraestructura va SIN default
 
 from __future__ import annotations
 
+import os
+
 from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -33,7 +35,14 @@ def _host_timezone() -> str:
 class Settings(BaseSettings):
     # extra="ignore": varios módulos comparten el mismo .env; cada Settings
     # ignora las variables que no declara.
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    # env_file NO está clavado al CWD: se lee de TEQUIO_ENV_FILE (default ".env"). Así un
+    # mismo despliegue puede apuntar a otro archivo (p. ej. TEQUIO_ENV_FILE=/run/secrets/app.env
+    # en docker) SIN symlinkear .env al CWD del proceso (el hack que necesitaban los beats).
+    model_config = SettingsConfigDict(
+        env_file=os.environ.get("TEQUIO_ENV_FILE", ".env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     # --- Infraestructura ---
     # Default sqlite local: tequio arranca y se usa SIN configurar nada (zero-config, como

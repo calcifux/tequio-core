@@ -35,9 +35,22 @@ from tequio.Core.Console import console_command
 )
 def schedule_work(
     loglevel: str = typer.Option(settings.log_level, help="Nivel de log del scheduler."),
+    schedule_file: str | None = typer.Option(
+        None,
+        "--schedule-file",
+        help="Dónde persiste el beat su calendario (default: ./celerybeat-schedule del CWD — en "
+        "contenedores con el repo montado, apúntalo fuera, p. ej. /tmp/celerybeat-schedule).",
+    ),
 ) -> None:
     """Lanza beat (proceso de larga duración). Bloquea hasta Ctrl-C. El
-    beat_schedule lo arma el Registry al configurarse Celery: los `@cron_task`
-    descubiertos (convertidos a crontab) más los `beat_schedule` de cada
-    `Console/Kernel.py` (estos con precedencia)."""
-    celery_app.start(argv=["beat", "--loglevel", loglevel])
+    beat_schedule lo arma el Registry al configurarse Celery, fusionando DOS
+    fuentes: los `@cron_task` descubiertos (convertidos a crontab) MÁS los
+    `beat_schedule` declarados en cada `Console/Kernel.py` (estos con precedencia).
+
+    `--schedule-file` reubica el archivo de estado de beat (`-s` de Celery). Útil
+    en docker con el repo montado de solo-lectura: el default cae en el CWD y beat
+    no podría escribirlo; apúntalo a un volumen escribible (p. ej. /tmp)."""
+    argv = ["beat", "--loglevel", loglevel]
+    if schedule_file is not None:
+        argv += ["-s", schedule_file]  # = celery beat -s <ruta>: dónde persiste su calendario
+    celery_app.start(argv=argv)

@@ -2,10 +2,10 @@
 
 Invocación estilo grupo (como `queue work` / `schedule work`):
 
-    tequio migrate make -m "crear tabla facturas"   # genera una revisión (autogenerate)
-    tequio migrate run                                # aplica las pendientes (upgrade head)
-    tequio migrate status                             # revisión actual + historial
-    tequio migrate rollback                           # revierte una revisión (downgrade -1)
+    jornal migrate make -m "crear tabla facturas"   # genera una revisión (autogenerate)
+    jornal migrate run                                # aplica las pendientes (upgrade head)
+    jornal migrate status                             # revisión actual + historial
+    jornal migrate rollback                           # revierte una revisión (downgrade -1)
 
 La BD sale de `DATABASE_URL` (Settings) y los modelos de `app/Models` (el autogenerate
 compara `Base.metadata` contra el esquema real). El archivo generado queda en

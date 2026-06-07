@@ -2,9 +2,9 @@
 
 Regla de routing (decisión del dueño, KISS): **si hay broker disponible, el observer corre
 en el worker (async); si no, corre síncrono inline.** Sin flags por-observer. El import de
-Celery es PEREZOSO (mismo patrón que la rama encolada de Tasks.py), así un proyecto que nunca
-encola observers no jala redis. Best-effort POR observer: uno que falla no tumba a los demás ni
-al caller (un efecto secundario no debe romper la operación de negocio).
+Celery es PEREZOSO (igual que `Mail.queue`, `Mail.py`), así un proyecto que nunca encola
+observers no jala redis. Best-effort POR observer: uno que falla no tumba a los demás ni al
+caller (un efecto secundario no debe romper la operación de negocio).
 """
 
 from __future__ import annotations
@@ -35,8 +35,7 @@ def dispatch(event: object) -> None:
 
 def _dispatch_one(observer_cls: type[Observer], event: object) -> None:
     """Encola el observer si hay broker; si no, lo corre síncrono. Import lazy de Celery
-    (mismo patrón que la rama encolada de Tasks.py): sin esta rama, Events no jala redis al
-    importarse."""
+    (mismo patrón que Mail.queue): sin esta rama, Events no jala redis al importarse."""
     from tequio.Core.CeleryApp import QueueUnavailableError
     from tequio.Core.Events.Tasks import enqueue_observer
 

@@ -3,7 +3,7 @@
 Este módulo es el LAZY BOUNDARY: solo se importa cuando un evento se encola (desde
 `Dispatch._dispatch_one`) o cuando el worker lo carga. Importa Celery (y por ende redis/kombu)
 arriba, así que `Core.Events.__init__` NO lo re-exporta: un proyecto que nunca encola
-observers jamás jala redis (mismo trato que la rama encolada de cualquier otro task).
+observers jamás jala redis (mismo trato que `Core/Mail/Tasks.py`).
 
 Contrato de serialización (= `SerializesModels` de Laravel): el evento debe ser un
 `@dataclass` de primitivos planos. Se viaja (observer_path, event_path, event_kwargs) y el
