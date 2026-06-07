@@ -36,3 +36,6 @@ celerybeat-schedule*
 .idea/
 .vscode/
 .DS_Store
+
+# Notas locales del mantenedor (playbook de release, apuntes); NO se versionan ni van al sdist
+*.local.md
