@@ -7,6 +7,16 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Unreleased]
 
+## [0.1.8] - 2026-06-08
+
+### Removed
+
+- **Capacidad `auth` del scan** (que 0.1.7 había agregado por paridad de kernel). CSP/CSRF son
+  preocupaciones de la **capa web inbound**; en tequio (worker-only, sin Http ni esos settings)
+  la capacidad siempre no-opeaba. `jornal scan` queda con `lazy`/`http`/`db`/`mongo` — las que sí
+  aplican a un worker. `auth` vive donde corresponde: en milpa. (`scan.py` no lo vigila el
+  drift-guard del kernel, así que esta divergencia es deliberada y sin costo.)
+
 ## [0.1.7] - 2026-06-08
 
 ### Added

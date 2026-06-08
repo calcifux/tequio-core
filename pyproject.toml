@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tequio-core"
-version = "0.1.7"
+version = "0.1.8"
 description = "Núcleo de trabajo en segundo plano estilo milpa: jobs, crons, eventos y BD (Celery + SQLAlchemy + Typer) sin capa HTTP."
 # El README es la descripción larga que muestra PyPI (sin esto, la página del
 # paquete sale vacía: "has not provided a project description").

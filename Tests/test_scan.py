@@ -74,20 +74,3 @@ def test_format_report_handles_empty() -> None:
     assert "Nada que reportar" in scan_mod.format_report([])
     out = scan_mod.format_report([Finding("lazy", "warn", "app.X", "msg", "hint")])
     assert "[lazy]" in out and "hint" in out
-
-
-def test_auth_capability(monkeypatch: object) -> None:
-    """auth: en app web flagea CSP report-only / sin CSP; en worker-only (sin esos settings)
-    se salta sin tronar. El mismo código kernel funciona en milpa y tequio."""
-    from tequio.Core.Config import settings
-    from tequio.scan import _Auth
-
-    empty = AppModel(modules=[], state={})
-    if not hasattr(settings, "content_security_policy"):
-        assert _Auth().analyze(empty) == []  # worker-only: nada que revisar
-        return
-    monkeypatch.setattr(settings, "content_security_policy", "default-src 'self'")  # type: ignore[attr-defined]
-    monkeypatch.setattr(settings, "csp_report_only", True)  # type: ignore[attr-defined]
-    assert any("Report-Only" in f.message for f in _Auth().analyze(empty))
-    monkeypatch.setattr(settings, "content_security_policy", "")  # type: ignore[attr-defined]
-    assert any(f.severity == "warn" for f in _Auth().analyze(empty))
