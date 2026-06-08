@@ -279,6 +279,56 @@ class _Mongo(Capability):
         return out
 
 
+@capability
+class _Auth(Capability):
+    """Seguridad de la auth WEB: CSP (mitiga el robo de token por XSS cuando la auth usa un
+    cookie legible por JS), CSRF. Solo aplica a apps con capa web — un worker-only no expone esto."""
+
+    name = "auth"
+
+    def analyze(self, model: AppModel) -> list[Finding]:
+        from tequio.Core.Config import settings
+
+        out: list[Finding] = []
+        # Sin capa web (worker-only) no hay settings de CSP/CSRF: nada que revisar.
+        if not hasattr(settings, "content_security_policy"):
+            return out
+        where = "config (.env)"
+        if not getattr(settings, "content_security_policy", ""):
+            out.append(
+                Finding(
+                    "auth",
+                    "warn",
+                    where,
+                    "Sin CSP: si la auth usa un cookie legible por JS (Bearer leído desde cookie), "
+                    "un XSS puede robar el token. CSP es la mitigación que NO toca el flujo de auth.",
+                    hint="tequio trae CSP report-only por default; defínelo (no lo vacíes).",
+                )
+            )
+        elif getattr(settings, "csp_report_only", True):
+            out.append(
+                Finding(
+                    "auth",
+                    "info",
+                    where,
+                    "CSP en Report-Only: observa las violaciones pero NO bloquea (seguro, pero aún "
+                    "no protege de verdad).",
+                    hint="Afina con los reportes y pon csp_report_only=false (enforcing) cuando esté limpio.",
+                )
+            )
+        if not getattr(settings, "csrf_enabled", True):
+            out.append(
+                Finding(
+                    "auth",
+                    "info",
+                    where,
+                    "CSRF deshabilitado.",
+                    hint="Si usas el carril cookie/sesión (no solo Bearer), considera habilitarlo.",
+                )
+            )
+        return out
+
+
 # ── Runner + reporte ────────────────────────────────────────────────────────────────
 def scan(modules_package: str, only: str | None = None) -> list[Finding]:
     """Construye el modelo y corre las capacidades (todas, o solo `only`)."""

@@ -7,6 +7,17 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-06-08
+
+### Added
+
+- **Capacidad `auth` del scan (paridad de kernel con milpa).** El motor `jornal scan` gana la
+  capacidad `auth` para mantener idéntico el kernel compartido. En tequio (worker-only, sin capa
+  web ni settings de CSP/CSRF) **se salta sin reportar nada** — el mismo código corre en ambos y
+  su comportamiento se adapta a lo que el framework expone. En milpa sí reporta el estado de CSP
+  report-only/enforcing y CSRF. Sin impacto para apps tequio; mantiene `tequio.scan` y `milpa.scan`
+  como el mismo engine.
+
 ## [0.1.6] - 2026-06-08
 
 ### Added
