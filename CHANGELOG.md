@@ -7,6 +7,20 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-06-07
+
+### Added
+
+- **`EVENTS_QUEUE`** (env; default `""` = comportamiento actual, 100% retrocompatible): cola
+  dedicada opcional para los eventos/observers (`events.handle`). Vacío → caen en la cola por
+  defecto (`{ns}.celery`), mezclados con jobs/mail. Con un valor (p. ej. `events`),
+  `enqueue_observer` los rutea a su cola propia `qualified_queue("events")` = `{ns}.events`
+  (respeta `QUEUE_NAMESPACE`). El objetivo es **observabilidad sin proceso extra**:
+  Prometheus/Grafana ven la carga de eventos como serie aparte (queue depth, latencia, fallos)
+  mientras el MISMO worker la drena si se agrega a `queue work --queue …,events`. Solo se le da
+  un worker dedicado si la métrica muestra que pesa. Es config de `.env`, en la misma familia
+  que `QUEUE_NAMESPACE` — cero boilerplate por app.
+
 ## [0.1.4] - 2026-06-07
 
 **Ciudadanía en un broker compartido.** El origen es un incidente real: en la mega-red **aqua**

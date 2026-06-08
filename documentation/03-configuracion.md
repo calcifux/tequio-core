@@ -61,6 +61,7 @@ tabla abajo y se detallan en [Correo](20-correo.md).
 | `LOCK_URL` | `""` → redis local | Store de locks (redis) para `without_overlapping`. |
 | `REDIS_VISIBILITY_TIMEOUT` | `3600` | Segundos antes de re-entregar una task (solo redis/SQS). |
 | `QUEUE_NAMESPACE` | `""` → sin prefijo | Prefijo de colas para convivir en un **broker compartido** (varias apps en el mismo redis db). Vacío = comportamiento actual. Con valor, la cola por defecto pasa a `<ns>.celery` y las nombradas a `<ns>.<cola>`. |
+| `EVENTS_QUEUE` | `""` → cola por defecto | Cola dedicada para eventos/observers (`events.handle`). Vacío = caen en `<ns>.celery` con todo lo demás. Con valor (ej. `events`) van a `<ns>.events`: métricas de eventos separadas en Prometheus **sin** proceso extra (mismo worker, si la agregas a `queue work --queue …,events`). |
 
 Ver [Colas y tareas](13-colas-y-tareas.md) → *Compartir un broker entre apps*.
 

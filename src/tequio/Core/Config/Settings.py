@@ -80,6 +80,15 @@ class Settings(BaseSettings):
     # en Core/CeleryApp/Dispatch.py) y el lock de cron se namespacea igual (cron-lock:{ns}:).
     queue_namespace: str = ""
 
+    # Cola DEDICADA para los eventos/observers (events.handle). Vacío (default) = caen en la
+    # cola por defecto ({ns}.celery), mezclados con jobs/mail — comportamiento de siempre.
+    # Con un valor (p. ej. "events"), enqueue_observer los rutea a su propia cola
+    # qualified_queue("events") = "{ns}.events": Prometheus/Grafana ven la carga de eventos
+    # como serie aparte (queue depth, latencia, fallos) SIN gastar otro proceso — el MISMO
+    # worker la drena si la agregas a `queue work --queue ...,events`. Solo se le da un
+    # worker propio si la métrica muestra que pesa (entonces sí, su [program:] dedicado).
+    events_queue: str = ""
+
     # --- Reintentos de tasks (defaults framework-wide; backoff exponencial con jitter) ---
     # Son los DEFAULTS de `retry_policy(...)` (app/Core/CeleryApp). Se pueden fijar por .env
     # O sobreescribir A MANO en código al declarar cada task. Solo afectan a tasks que OPTAN

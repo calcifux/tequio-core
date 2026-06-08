@@ -16,7 +16,8 @@ from __future__ import annotations
 import importlib
 from typing import Any
 
-from tequio.Core.CeleryApp import broker_guard, celery_app
+from tequio.Core.CeleryApp import broker_guard, celery_app, qualified_queue
+from tequio.Core.Config import settings
 from tequio.Core.Events.Observer import Observer
 
 
@@ -35,6 +36,9 @@ def enqueue_observer(observer_cls: type[Observer], event: object) -> None:
     reconstruyen en el worker). `broker_guard`: si el broker no responde, lanza
     `QueueUnavailableError` (el caller cae a ejecución síncrona)."""
     payload: dict[str, Any] = dict(vars(event))
+    # EVENTS_QUEUE vacío => queue=None => cae en task_default_queue ({ns}.celery), como siempre.
+    # Con valor => su cola propia {ns}.events (focalización para observabilidad sin proceso extra).
+    queue = qualified_queue(settings.events_queue) if settings.events_queue else None
     with broker_guard():
         _handle_event_task.apply_async(
             kwargs={
@@ -42,6 +46,7 @@ def enqueue_observer(observer_cls: type[Observer], event: object) -> None:
                 "event_path": f"{type(event).__module__}.{type(event).__qualname__}",
                 "event_kwargs": payload,
             },
+            queue=queue,
         )
 
 
