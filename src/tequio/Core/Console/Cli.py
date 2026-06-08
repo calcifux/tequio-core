@@ -52,6 +52,24 @@ def list_commands() -> None:
     Console().print(build_command_table(general))
 
 
+@app.command(
+    name="scan",
+    help="Analiza la app: libs pesadas eager, http/db crudos, etc. (capacidades auto-descubribles).",
+)
+def scan(
+    only: str | None = typer.Option(None, "--only", help="Corre solo una capacidad (ej. lazy, http, db, mongo)."),
+) -> None:
+    """Construye un modelo de la app vía el auto-discovery y corre las capacidades (lazy/http/db/
+    mongo + las que la app declare con `@capability`). Solo REPORTA, no toca nada."""
+    from tequio.scan import capability_names, format_report
+    from tequio.scan import scan as run_scan
+
+    if only and only not in capability_names():
+        Console().print(f"[red]Capacidad '{only}' no existe.[/] Disponibles: {', '.join(capability_names())}")
+        raise typer.Exit(1)
+    Console().print(format_report(run_scan(settings.modules_package, only=only)))
+
+
 @app.command(name="new", help="Crea un proyecto nuevo de tequio desde una plantilla. (≈ laravel new).")
 def new(
     name: str = typer.Argument(..., help="Nombre del proyecto (carpeta a crear en el dir actual)."),

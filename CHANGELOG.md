@@ -7,6 +7,25 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-06-08
+
+### Added
+
+- **`tequio.lazy`** — import perezoso opt-in para libs pesadas/opcionales. El auto-discovery
+  importa TODOS los módulos de la app al arrancar, así que un `import openpyxl`/`pandas`/`torch`
+  al top-level se carga en procesos que no lo usan (el worker que no genera Excel, el cron
+  efímero). `from tequio.lazy import openpyxl` difiere la carga hasta el primer uso (vía
+  `importlib.util.LazyLoader`); el módulo queda `_LazyModule` hasta que accedes a un atributo.
+  Genérico para cualquier lib, documentado, no rompe el `import` normal del que lo ignore.
+- **`jornal scan` (`tequio.scan`)** — análisis automático y extensible de la app. Construye un
+  modelo (grafo de imports al top-level + estado eager/lazy, vía el discovery que ya existe) y
+  corre **capacidades** por concern: `lazy` (libs pesadas eager → sugiere `tequio.lazy`, acredita
+  las ya diferidas), `http` (clientes crudos), `db` (engine/session a mano), `mongo` (drivers
+  crudos). Las capacidades se **auto-descubren** (`@capability`, mismo trato que tasks/observers):
+  una app/plugin suelta una clase y el scan la encuentra, sin registro central. `jornal scan
+  --only <cap>` corre una sola. Solo reporta (no toca nada); el `--fix` con codemods queda para
+  una fase siguiente.
+
 ## [0.1.5] - 2026-06-07
 
 ### Added

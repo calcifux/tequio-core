@@ -88,3 +88,4 @@ nav:
   - Más:
       - Correo: 20-correo.md
       - Logging: 18-logging.md
+      - Lazy imports y scan: 21-lazy-y-scan.md
