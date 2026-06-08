@@ -1,52 +1,91 @@
 # Imports perezosos (`tequio.lazy`) y análisis (`jornal scan`)
 
-El auto-discovery de tequio importa **todos** los módulos de tu app al arrancar (para registrar
-tasks, observers, rutas, modelos, crons). Eso es lo que hace que "las carpetas sean propuesta" y
-todo se registre solo — pero también significa que un `import openpyxl` (o `pandas`, `torch`...)
-al tope de un módulo se carga en **todos** los procesos, incluso en los que nunca lo usan: el
-worker que no genera Excel carga openpyxl igual, el cron efímero también. En Python cada intérprete
-es caro (~110 MB de base), y esas libs pesadas se suman donde no hacen falta.
+## El principio (el camino tequio)
+
+tequio **importa todos los módulos de tu app al arrancar** para registrarlos solos: tasks,
+observers, rutas, modelos, crons. Eso es lo que hace que "las carpetas sean propuesta" y que
+agregar un `@cron_task` o un `@Get` sea *solo crear el archivo*. Pero tiene una consecuencia:
+un `import openpyxl` (o `pandas`, `torch`, `httpx`) **al top-level de un módulo** se carga en
+**todos** los procesos que hacen ese discovery — aunque ese proceso nunca use la lib.
+
+En Python cada intérprete es caro (~110 MB de base). Si el worker que **nunca** genera Excel
+carga `openpyxl` igual, o el `schedule run` efímero carga libs que solo usa el web, estás
+pagando RAM (y arranque) donde no hace falta. El camino tequio: **el discovery registra todo,
+pero tú difieres lo pesado que cada proceso no siempre usa.**
 
 ## `tequio.lazy` — difiere la lib hasta el primer uso
 
 ```python
-from tequio.lazy import openpyxl          # NO carga openpyxl aún (solo lo nombra)
+from tequio.lazy import openpyxl          # NO carga openpyxl aún — solo lo nombra
 
 def generar(...):
     wb = openpyxl.Workbook()             # se carga AQUÍ, la 1ª vez que se usa
     celda.font = openpyxl.styles.Font(bold=True)
 ```
 
-- Es **opt-in y documentado**: el dev que escribe `import openpyxl` normal sigue igual (eager) — no rompe nada, solo no ahorra.
-- Genérico para **cualquier** lib: `from tequio.lazy import pandas`, `numpy`, etc.
-- Respaldado por `importlib.util.LazyLoader` (stdlib). El módulo queda como `_LazyModule` hasta que accedes a un atributo.
+El módulo queda como `_LazyModule` (vía `importlib.util.LazyLoader`, stdlib) hasta que accedes
+a un atributo. Es **opt-in**: el dev que escribe `import openpyxl` normal sigue igual (eager) —
+no rompe nada, solo no ahorra. Y **genérico**: cualquier lib (`from tequio.lazy import pandas`,
+`numpy`, lo que instales).
 
-**Para submódulos** (la API de openpyxl vive en `.styles`/`.utils`): una vez cargado el paquete,
-sus submódulos son accesibles (`openpyxl.styles.Font`). Para tipos en anotaciones, usa
-`if TYPE_CHECKING:` — no disparan la carga.
+### Dos formas — elige según el uso
 
-**Límite honesto:** lazy es del **módulo**, no de `from openpyxl import Workbook` (esa forma accede
-al atributo y carga). Y no accedas a la lib en el cuerpo del módulo (a nivel top-level) — solo
-dentro de funciones —, o el discovery la carga igual.
+**Forma A — runtime puro (la limpia para pandas/numpy/requests):**
+```python
+from tequio.lazy import pandas
+df = pandas.DataFrame(datos)             # el cuerpo usa pandas.X
+```
 
-## `jornal scan` — qué libs pesadas se cargan donde no van
+**Forma B — la lib tiene TIPO en anotaciones + corres mypy strict** (p. ej. `httpx.Response`):
+aquí la Forma A truena en mypy (ve `ModuleType`, no `httpx.Client`). Usa `TYPE_CHECKING` para
+el tipo + import function-local para el runtime:
+```python
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:                        # solo para anotaciones; no carga en runtime
+    import httpx
+
+class Cliente:
+    def __init__(self):
+        import httpx                      # function-local: carga solo al instanciar
+        self._c = httpx.Client(...)
+    def _check(self, r: httpx.Response): ...   # la anotación es string (future), usa el TYPE_CHECKING
+```
+
+### Los límites honestos
+
+- Lazy es del **módulo**, no de `from openpyxl import Workbook` (esa forma accede al atributo y
+  carga). Por eso difieres el módulo y cualificas el cuerpo (`openpyxl.Workbook()`).
+- No accedas a la lib **en el cuerpo del módulo** (top-level) — solo dentro de funciones —, o
+  el discovery la carga igual.
+- Las **excepciones en `except`** necesitan la clase real → impórtala function-local.
+- No baja el **piso obligatorio** (SQLAlchemy/pydantic/celery van en casi todo). Lazy trimea lo
+  **opcional/pesado** del proceso que no lo usa, y acelera el **cold-start** (clave para
+  `schedule run` efímero y scale-to-zero). No es magia: es disciplina.
+
+## `jornal scan` — el copiloto que te enseña dónde
 
 ```bash
 jornal scan              # corre todas las capacidades sobre tu app
-jornal scan --only http  # solo la capacidad de http
+jornal scan --only http  # solo una
 ```
 
-El comando construye un **modelo de la app** (vía el discovery que ya existe: el grafo de imports
-al top-level + el estado eager/lazy de cada lib) y corre las **capacidades** — checks por concern:
+Construye un **modelo de tu app** (grafo de imports al top-level + estado eager/lazy, usando el
+discovery que ya existe) y corre **capacidades** por concern:
 
-| Capacidad | Qué detecta |
+| Capacidad | Qué te dice |
 |---|---|
-| `lazy` | libs pesadas (openpyxl, pandas, numpy, torch...) importadas **eager** — candidatas a `tequio.lazy`. Acredita ✓ las que ya están diferidas. |
-| `http` | clientes http crudos (requests, httpx...) — a centralizar timeouts/trazas y diferir |
-| `db` | engine/session de SQLAlchemy armados a mano — usa la sesión ambiente (`@transactional`) |
-| `mongo` | drivers de Mongo crudos — aísla la conexión (lazy + config por `.env`) |
+| `lazy` | libs pesadas (openpyxl, pandas, numpy, torch...) importadas **eager** → sugiere `tequio.lazy`. Acredita ✓ las que ya difieres. |
+| `http` | clientes http crudos (requests, httpx...) → centraliza timeouts/trazas y difiere |
+| `db` | engine/session de SQLAlchemy a mano → usa la sesión ambiente (`@transactional`) |
+| `mongo` | drivers de Mongo crudos → aísla la conexión (lazy + config por `.env`) |
 
-## Capacidades propias (auto-descubribles)
+No ejecuta acciones: **reporta** y te apunta al hint exacto. La magia 100% automática no es
+posible (un `from X import Y` carga sí o sí), así que el scan es **diagnóstico**: te enseña
+dónde aplicar el camino, no lo aplica a tus espaldas.
+
+## Capacidades propias — encodea las convenciones de tu equipo
 
 Como tasks y observers, una capacidad propia **se suelta y el discovery la encuentra** — sin
 registro central:
@@ -59,10 +98,11 @@ class _Auditoria(Capability):
     name = "auditoria"
     def analyze(self, model):
         return [
-            Finding("auditoria", "info", m.dotted, "módulo sensible: revisar permisos")
+            Finding("auditoria", "warn", m.dotted, "módulo sensible sin revisión de permisos")
             for m in model.modules if "Admin" in m.dotted
         ]
 ```
 
 `jornal scan --only auditoria` la corre. Cada capacidad que agregues hace **toda la flota** más
-segura: encodeas las convenciones de tu equipo como conocimiento ejecutable.
+segura: dejas de regañar en code review y dejas que el scan enseñe el camino solo. Eso es estilo
+tequio — la convención vive como conocimiento ejecutable, auto-descubrible, que escala a N apps.
