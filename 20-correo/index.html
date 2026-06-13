@@ -1,0 +1,2435 @@
+
+<!doctype html>
+<html lang="es" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Núcleo de trabajo en segundo plano (Celery + SQLAlchemy + Typer) estilo milpa, para servicios worker-side: daemons, pipelines de datos, monitores y ETLs sin capa HTTP.">
+      
+      
+        <meta name="author" content="@Calcifux">
+      
+      
+      
+        <link rel="prev" href="../17-pipeline/">
+      
+      
+        <link rel="next" href="../18-logging/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Correo - tequio</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#correo" class="md-skip">
+          Saltar a contenido
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Cabecera">
+    <a href=".." title="tequio" class="md-header__button md-logo" aria-label="tequio" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 6h3l3.29-3.3a1 1 0 0 1 1.42 0l2.58 2.59a1 1 0 0 1 0 1.41L19 9h-8v2a1 1 0 0 1-1 1 1 1 0 0 1-1-1V8a2 2 0 0 1 2-2m-6 5v4l-2.29 2.29a1 1 0 0 0 0 1.41l2.58 2.59a1 1 0 0 0 1.42 0L11 17h4a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h-7v1a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            tequio
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Correo
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Cambiar a oscuro"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Cambiar a oscuro" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Cambiar a claro"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Cambiar a claro" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Búsqueda" placeholder="Búsqueda" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Buscar">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Limpiar" aria-label="Limpiar" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Inicializando búsqueda
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/calcifux/tequio-core" title="Ir al repositorio" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    calcifux/tequio-core
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navegación" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="tequio" class="md-nav__button md-logo" aria-label="tequio" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 6h3l3.29-3.3a1 1 0 0 1 1.42 0l2.58 2.59a1 1 0 0 1 0 1.41L19 9h-8v2a1 1 0 0 1-1 1 1 1 0 0 1-1-1V8a2 2 0 0 1 2-2m-6 5v4l-2.29 2.29a1 1 0 0 0 0 1.41l2.58 2.59a1 1 0 0 0 1.42 0L11 17h4a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h-7v1a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9Z"/></svg>
+
+    </a>
+    tequio
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/calcifux/tequio-core" title="Ir al repositorio" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    calcifux/tequio-core
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inicio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Primeros pasos
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Primeros pasos
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01-introduccion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introducción
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02-instalacion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Instalación
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03-configuracion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuración
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04-estructura-directorios/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Estructura de directorios
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05-ciclo-de-vida/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ciclo de vida
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Arquitectura
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Arquitectura
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06-monolito-modular/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monolito modular
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../19-errores/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Errores de dominio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Consola
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Consola
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07-consola-jornal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    jornal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Base de datos
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Base de datos
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08-base-de-datos/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Base de datos
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09-modelos/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modelos
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10-repositorios-y-transacciones/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repositorios y transacciones
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../11-filtrado-y-paginacion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filtrado y paginación
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Background
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../12-jobs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jobs (@job)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../13-colas-y-tareas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Colas y tareas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../14-programacion-cron/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Programación (cron)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Patrones (estilo milpa)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Patrones (estilo milpa)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../15-eventos-y-observers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Eventos y Observers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../16-mediator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mediator (command bus)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../17-pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Más
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Más
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Correo
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Correo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Tabla de contenidos">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Tabla de contenidos
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#anatomia-mailable-mailcontent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anatomía: Mailable + MailContent
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Anatomía: Mailable + MailContent">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#campos-de-mailcontent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Campos de MailContent
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#enviar-la-facade-mail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enviar: la facade Mail
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Enviar: la facade Mail">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sincrono-mailsend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Síncrono — Mail.send
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#encolado-mailqueue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Encolado — Mail.queue
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#la-cola-de-correos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        La cola de correos
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#el-contrato-del-constructor-solo-primitivos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        El contrato del constructor: solo primitivos
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adjuntos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adjuntos
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Adjuntos">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#por-bytes-recomendado" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Por bytes (recomendado)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#por-archivo-cleanup-opt-in" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Por archivo + cleanup opt-in
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logo-inline-por-cid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logo inline por CID
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plantillas-jinja" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plantillas (jinja)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Plantillas (jinja)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#donde-viven-y-como-se-resuelven" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dónde viven y cómo se resuelven
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#crear-tu-plantilla" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Crear tu plantilla
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#drivers-mail_driver" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Drivers (MAIL_DRIVER)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#probar-correos-directo-en-el-repo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Probar correos directo en el repo
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#monolingue-vs-i18n" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monolingüe vs. i18n
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#los-correos-del-demo-tequio-new-demo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Los correos del demo (tequio new --demo)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Los correos del demo (tequio new --demo)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#el-cron-que-manda-correo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        El cron que manda correo
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#siguiente-paso" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Siguiente paso
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../18-logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../21-lazy-y-scan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lazy imports y scan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Tabla de contenidos">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Tabla de contenidos
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#anatomia-mailable-mailcontent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anatomía: Mailable + MailContent
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Anatomía: Mailable + MailContent">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#campos-de-mailcontent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Campos de MailContent
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#enviar-la-facade-mail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enviar: la facade Mail
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Enviar: la facade Mail">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sincrono-mailsend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Síncrono — Mail.send
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#encolado-mailqueue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Encolado — Mail.queue
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#la-cola-de-correos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        La cola de correos
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#el-contrato-del-constructor-solo-primitivos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        El contrato del constructor: solo primitivos
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adjuntos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adjuntos
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Adjuntos">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#por-bytes-recomendado" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Por bytes (recomendado)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#por-archivo-cleanup-opt-in" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Por archivo + cleanup opt-in
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logo-inline-por-cid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logo inline por CID
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plantillas-jinja" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plantillas (jinja)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Plantillas (jinja)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#donde-viven-y-como-se-resuelven" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dónde viven y cómo se resuelven
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#crear-tu-plantilla" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Crear tu plantilla
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#drivers-mail_driver" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Drivers (MAIL_DRIVER)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#probar-correos-directo-en-el-repo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Probar correos directo en el repo
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#monolingue-vs-i18n" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monolingüe vs. i18n
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#los-correos-del-demo-tequio-new-demo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Los correos del demo (tequio new --demo)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Los correos del demo (tequio new --demo)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#el-cron-que-manda-correo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        El cron que manda correo
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#siguiente-paso" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Siguiente paso
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="correo">Correo<a class="headerlink" href="#correo" title="Permanent link">&para;</a></h1>
+<p>El correo en tequio sigue el patrón <strong>Mailable</strong> de Laravel: una clase encapsula "qué
+correo es" (asunto, template, contexto, adjuntos) y la facade <code>Mail</code> lo envía, síncrono
+o encolado.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Ejemplo ILUSTRATIVO: el import y la API son reales; `WelcomeMailable` es de ejemplo</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1"># (el Mailable real del demo es `DailyDigestMailable`).</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tequio.Core.Mail</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mail</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">Mail</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">WelcomeMailable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Calcifux&quot;</span><span class="p">),</span> <span class="n">to</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;calcifux@example.com&quot;</span><span class="p">])</span>
+</code></pre></div>
+<div class="admonition info">
+<p class="admonition-title">Correo worker-side</p>
+<p>tequio extrajo el correo de milpa porque <strong>vuelve al worker</strong>: muchos crons y jobs
+terminan mandando un correo (un resumen diario, una alerta, una notificación). Lo que
+NO viene es la capa <strong>web</strong> que lo disparaba (controladores HTTP, endpoints): aquí el
+correo nace de un cron, un job, un command de consola o un observer.</p>
+</div>
+<h2 id="anatomia-mailable-mailcontent">Anatomía: <code>Mailable</code> + <code>MailContent</code><a class="headerlink" href="#anatomia-mailable-mailcontent" title="Permanent link">&para;</a></h2>
+<p>Un Mailable hereda de la ABC <code>Mailable</code> (<code>tequio/Core/Mail/Mailable.py</code>) e implementa
+<code>build()</code>, que devuelve un <code>MailContent</code> (el <code>WelcomeMailable</code> de abajo es <strong>ilustrativo</strong>;
+el Mailable real del demo es <code>DailyDigestMailable</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tequio.Core.Mail.Mailable</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mailable</span><span class="p">,</span> <span class="n">MailContent</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tequio.Core.Translate</span><span class="w"> </span><span class="kn">import</span> <span class="n">t</span><span class="p">,</span> <span class="n">current_locale</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">WelcomeMailable</span><span class="p">(</span><span class="n">Mailable</span><span class="p">):</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>        <span class="c1"># SOLO primitivos serializables (ver &quot;Encolar&quot; más abajo).</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MailContent</span><span class="p">:</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>        <span class="k">return</span> <span class="n">MailContent</span><span class="p">(</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>            <span class="n">subject</span><span class="o">=</span><span class="n">t</span><span class="p">(</span><span class="s2">&quot;emails.welcome.subject&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">}),</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>            <span class="n">template</span><span class="o">=</span><span class="s2">&quot;mymodule/mail/welcome.html.j2&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>            <span class="n">context</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span> <span class="s2">&quot;locale&quot;</span><span class="p">:</span> <span class="n">current_locale</span><span class="p">()},</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>        <span class="p">)</span>
+</code></pre></div>
+<p><code>build()</code> arma el <strong>payload puro</strong> — no toca SMTP ni Jinja directamente.</p>
+<h3 id="campos-de-mailcontent">Campos de <code>MailContent</code><a class="headerlink" href="#campos-de-mailcontent" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Para qué</th>
+<th>Laravel</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>subject</code></td>
+<td><code>str</code></td>
+<td>Asunto (ya traducido por ti).</td>
+<td><code>-&gt;subject()</code></td>
+</tr>
+<tr>
+<td><code>template</code></td>
+<td><code>str</code></td>
+<td>Ruta del template Jinja (compartido o <code>modulo/...</code>).</td>
+<td><code>-&gt;view()</code></td>
+</tr>
+<tr>
+<td><code>context</code></td>
+<td><code>dict</code></td>
+<td>Variables del template.</td>
+<td><code>-&gt;with()</code></td>
+</tr>
+<tr>
+<td><code>from_email</code> / <code>from_name</code></td>
+<td><code>str \| None</code></td>
+<td>Remitente; si <code>None</code>, usa el default de settings.</td>
+<td><code>-&gt;from()</code></td>
+</tr>
+<tr>
+<td><code>inline_assets</code></td>
+<td><code>dict[str, Path]</code></td>
+<td>CID → ruta (imagen embebida). En HTML: <code>&lt;img src="cid:logo"&gt;</code>.</td>
+<td><code>$message-&gt;embed()</code></td>
+</tr>
+<tr>
+<td><code>attachments</code></td>
+<td><code>list[Path]</code></td>
+<td>Adjuntos por ruta (archivos en disco).</td>
+<td><code>-&gt;attach()</code></td>
+</tr>
+<tr>
+<td><code>data_attachments</code></td>
+<td><code>list[DataAttachment]</code></td>
+<td>Adjuntos por <strong>bytes</strong> en memoria.</td>
+<td><code>-&gt;attachData()</code></td>
+</tr>
+<tr>
+<td><code>cleanup_paths</code></td>
+<td><code>list[Path]</code></td>
+<td>Rutas a borrar tras enviar (opt-in).</td>
+<td><code>File::delete()</code> en <code>finally</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="enviar-la-facade-mail">Enviar: la facade <code>Mail</code><a class="headerlink" href="#enviar-la-facade-mail" title="Permanent link">&para;</a></h2>
+<h3 id="sincrono-mailsend">Síncrono — <code>Mail.send</code><a class="headerlink" href="#sincrono-mailsend" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">Mail</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">mailable</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">to</span><span class="p">,</span> <span class="n">cc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bcc</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+<p>Construye y manda <strong>en el acto</strong> por SMTP. No usa redis ni worker; bloquea hasta que
+SMTP responde. Ideal para local sin broker, tests, o cuando necesitas confirmar el envío.</p>
+<h3 id="encolado-mailqueue">Encolado — <code>Mail.queue</code><a class="headerlink" href="#encolado-mailqueue" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">Mail</span><span class="o">.</span><span class="n">queue</span><span class="p">(</span><span class="n">mailable</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">to</span><span class="p">,</span> <span class="n">cc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bcc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">init_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+<p>Encola el envío en Celery (no bloquea). Parámetros:</p>
+<ul>
+<li><code>queue</code>: cola de Celery (ej. <code>"emails"</code>); <code>None</code> = cola por defecto.</li>
+<li><code>init_kwargs</code>: los argumentos primitivos para <strong>reinstanciar</strong> el Mailable en el
+  worker. Deben coincidir con el <code>__init__</code>.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">mailable</span> <span class="o">=</span> <span class="n">WelcomeMailable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Calcifux&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">Mail</span><span class="o">.</span><span class="n">queue</span><span class="p">(</span><span class="n">mailable</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;calcifux@example.com&quot;</span><span class="p">],</span> <span class="n">queue</span><span class="o">=</span><span class="s2">&quot;emails&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>           <span class="n">init_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Calcifux&quot;</span><span class="p">})</span>
+</code></pre></div>
+<p>Por convención, los correos van a la cola <strong><code>emails</code></strong> (ver <a href="#la-cola-de-correos">La cola de correos</a>),
+que un worker consume con <code>queue work --queue emails</code>.</p>
+<p>Si el broker está caído, <code>Mail.queue</code> lanza <code>QueueUnavailableError</code> (un mensaje claro,
+no un 500 técnico). En un worker o un cron lo capturas y decides: reintentar, caer al
+envío síncrono, o solo loguear que la cola no está disponible:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tequio.Core.CeleryApp</span><span class="w"> </span><span class="kn">import</span> <span class="n">QueueUnavailableError</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">Mail</span><span class="o">.</span><span class="n">queue</span><span class="p">(</span><span class="n">mailable</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">,</span> <span class="n">init_kwargs</span><span class="o">=</span><span class="p">{</span><span class="o">...</span><span class="p">})</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="k">except</span> <span class="n">QueueUnavailableError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;cola de correo no disponible: </span><span class="si">{e}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">e</span><span class="o">=</span><span class="n">e</span><span class="p">)</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    <span class="c1"># ...reintentar más tarde, o caer a Mail.send(...) si el envío no puede esperar.</span>
+</code></pre></div>
+<h2 id="la-cola-de-correos">La cola de correos<a class="headerlink" href="#la-cola-de-correos" title="Permanent link">&para;</a></h2>
+<p>Por convención, <strong>los correos van a la cola <code>emails</code></strong> (= <code>-&gt;onQueue('emails')</code> de Laravel):
+al encolar pasas <code>queue="emails"</code>, y el worker la consume con</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>tequio<span class="w"> </span>queue<span class="w"> </span>work<span class="w"> </span>--queue<span class="w"> </span>emails
+</code></pre></div>
+<p>Una cola dedicada deja los correos en su propio carril: un pico de envíos no atasca tus
+jobs, y puedes escalar los workers de correo por separado. El generador <code>make mailable</code> ya
+escribe este patrón en el stub (ver <a href="../07-consola-jornal/">Consola</a>), y el cron <code>daily_digest</code>
+del demo encola así.</p>
+<p>La cola <code>emails</code> <strong>no es mágica</strong>: es solo un nombre. Lo que la hace existir es que un worker
+la consuma. Si arrancas <code>queue work</code> <strong>sin</strong> <code>--queue</code>, ese worker procesa la cola <strong>por
+defecto</strong> (<code>celery</code>), no <code>emails</code>. Para consumir ambas en un mismo worker, lístalas:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>tequio<span class="w"> </span>queue<span class="w"> </span>work<span class="w"> </span>--queue<span class="w"> </span>emails,celery<span class="w">   </span><span class="c1"># correos + la cola por defecto</span>
+</code></pre></div>
+<blockquote>
+<p>Si encolas a <code>emails</code> pero ningún worker la consume, los correos se quedan esperando en el
+broker (no se pierden, pero tampoco salen). En dev sin broker no necesitas nada de esto: usa
+<code>Mail.send</code> (síncrono) o el driver <code>log</code>, abajo.</p>
+</blockquote>
+<h2 id="el-contrato-del-constructor-solo-primitivos">El contrato del constructor: solo primitivos<a class="headerlink" href="#el-contrato-del-constructor-solo-primitivos" title="Permanent link">&para;</a></h2>
+<p>Al encolar, el Mailable se <strong>reinstancia en el worker</strong> desde su dotted path +
+<code>init_kwargs</code>, y <strong><code>build()</code> corre allí</strong> (worker-side). Por eso el constructor solo
+debe recibir primitivos serializables (str, int, listas de str, ids). Nada de sesiones
+de BD ni clientes HTTP: no se serializan. Si necesitas más datos, pasa un id y recupéralo
+en <code>build()</code>.</p>
+<p>Ventaja: si <code>build()</code> genera bytes (un PDF), esos bytes <strong>no viajan por la cola</strong> — se
+generan en el worker.</p>
+<h2 id="adjuntos">Adjuntos<a class="headerlink" href="#adjuntos" title="Permanent link">&para;</a></h2>
+<h3 id="por-bytes-recomendado">Por bytes (recomendado)<a class="headerlink" href="#por-bytes-recomendado" title="Permanent link">&para;</a></h3>
+<p>Sin tocar disco, sin cleanup:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tequio.Core.Mail.Mailable</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataAttachment</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="n">content</span><span class="o">.</span><span class="n">data_attachments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>    <span class="n">DataAttachment</span><span class="p">(</span><span class="s2">&quot;reporte.pdf&quot;</span><span class="p">,</span> <span class="n">pdf_bytes</span><span class="p">,</span> <span class="s2">&quot;application/pdf&quot;</span><span class="p">)</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="p">)</span>
+</code></pre></div>
+<h3 id="por-archivo-cleanup-opt-in">Por archivo + cleanup opt-in<a class="headerlink" href="#por-archivo-cleanup-opt-in" title="Permanent link">&para;</a></h3>
+<p>Si el PDF ya vive en disco como temporal, adjúntalo por ruta y <strong>declara</strong> su limpieza:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">content</span><span class="o">.</span><span class="n">attachments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp_path</span><span class="p">)</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">content</span><span class="o">.</span><span class="n">cleanup_paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp_path</span><span class="p">)</span>   <span class="c1"># el Mailer lo borra tras enviar (finally)</span>
+</code></pre></div>
+<p>El framework <strong>nunca</strong> borra un <code>attachments</code> por su cuenta: solo lo que declares en
+<code>cleanup_paths</code>. Un asset persistente (un PDF fijo) va en <code>attachments</code> y NO en
+<code>cleanup_paths</code>.</p>
+<h3 id="logo-inline-por-cid">Logo inline por CID<a class="headerlink" href="#logo-inline-por-cid" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">content</span><span class="o">.</span><span class="n">inline_assets</span><span class="p">[</span><span class="s2">&quot;logo&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;app/Resources/Images/Emails/logo.png&quot;</span><span class="p">)</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="n">content</span><span class="o">.</span><span class="n">context</span><span class="p">[</span><span class="s2">&quot;logo_cid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;logo&quot;</span>
+</code></pre></div>
+<p>En el template: <code>&lt;img src="cid:logo"&gt;</code>. (El header SMTP usa <code>&lt;logo&gt;</code>; en el HTML va sin
+ángulos.)</p>
+<h2 id="plantillas-jinja">Plantillas (jinja)<a class="headerlink" href="#plantillas-jinja" title="Permanent link">&para;</a></h2>
+<p>El HTML de cada correo lo renderiza el <strong><code>TemplateEngine</code></strong> (<code>tequio.Core.View</code>) — el "Blade"
+de tequio: un solo <code>Environment</code> de Jinja2 por proceso, <strong>autoescape ON</strong> (default seguro) y
+<strong><code>StrictUndefined</code></strong>: una variable faltante en la plantilla <strong>revienta</strong> en lugar de
+renderizar vacío en silencio (un correo a deudores debe fallar visiblemente en QA, no llegar
+con campos en blanco).</p>
+<h3 id="donde-viven-y-como-se-resuelven">Dónde viven y cómo se resuelven<a class="headerlink" href="#donde-viven-y-como-se-resuelven" title="Permanent link">&para;</a></h3>
+<p>El loader busca en este <strong>orden de prioridad</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dónde</th>
+<th>Cómo se referencia</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>Modules/&lt;X&gt;/Resources/Views/</code> (por módulo, viaja con él)</td>
+<td>namespaced con el módulo en minúsculas: <code>"demo/emails/digest.html.j2"</code> (= <code>demo::emails.digest</code> de Laravel)</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>USER_VIEWS_DIR</code> del <code>.env</code> (carpeta de TU proyecto)</td>
+<td>ruta relativa: puede <strong>pisar</strong> los layouts del framework</td>
+</tr>
+<tr>
+<td>3</td>
+<td>La raíz compartida del paquete (<code>tequio/Resources/Views/</code>)</td>
+<td>ruta relativa: <code>"Emails/Trans/mastersigned.html.j2"</code></td>
+</tr>
+</tbody>
+</table>
+<p>En la raíz compartida ya vienen los <strong>layouts de correo</strong> listos para extender:
+<code>Emails/Trans/master.html.j2</code> (pelón) y <code>Emails/Trans/mastersigned.html.j2</code> (con header de
+logo + footer firmado), más sus parciales (<code>Footer/</code>, <code>Styles/</code>).</p>
+<h3 id="crear-tu-plantilla">Crear tu plantilla<a class="headerlink" href="#crear-tu-plantilla" title="Permanent link">&para;</a></h3>
+<p>La del digest del demo es el ejemplo mínimo completo
+(<code>Modules/Demo/Resources/Views/emails/digest.html.j2</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="cp">{%</span> <span class="k">extends</span> <span class="s2">&quot;Emails/Trans/mastersigned.html.j2&quot;</span> <span class="cp">%}</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="cp">{%</span> <span class="k">block</span> <span class="nv">content</span> <span class="cp">%}</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>    <span class="p">&lt;</span><span class="nt">h2</span> <span class="na">style</span><span class="o">=</span><span class="s">&quot;margin:0 0 12px;&quot;</span><span class="p">&gt;</span>Resumen diario<span class="p">&lt;/</span><span class="nt">h2</span><span class="p">&gt;</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>    <span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>Hoy hay <span class="p">&lt;</span><span class="nt">strong</span><span class="p">&gt;</span><span class="cp">{{</span> <span class="nv">total</span> <span class="cp">}}</span><span class="p">&lt;/</span><span class="nt">strong</span><span class="p">&gt;</span> notas en total.<span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
+</code></pre></div>
+<p>El <code>context</code> que pasas en <code>MailContent</code> llega como variables (<code>{{ total }}</code>). Dos <strong>globals</strong>
+ya están registrados en todos los templates sin importar nada: <strong><code>t()</code></strong> (i18n, ver
+<a href="#monolingue-vs-i18n">Monolingüe vs. i18n</a>) y <strong><code>app_name</code></strong> (la marca del proyecto, desde
+<code>APP_NAME</code>). Para cadenas con HTML legítimo usa <code>| safe</code> (≈ <code>{!! !!}</code>).</p>
+<p>Si vienes de Laravel, el mapeo es 1:1:</p>
+<table>
+<thead>
+<tr>
+<th>Blade (legacy)</th>
+<th>Jinja (tequio)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>@extends('emails.trans.master')</code></td>
+<td><code>{% extends "Emails/Trans/master.html.j2" %}</code></td>
+</tr>
+<tr>
+<td><code>@yield('content')</code> / <code>@section</code></td>
+<td><code>{% block content %}{% endblock %}</code></td>
+</tr>
+<tr>
+<td><code>@include('emails.trans.footer.x')</code></td>
+<td><code>{% include "Emails/Trans/Footer/x.html.j2" %}</code></td>
+</tr>
+<tr>
+<td><code>{!! __('ns.key', $vars) !!}</code></td>
+<td><code>{{ t('ns.key', vars) \| safe }}</code></td>
+</tr>
+<tr>
+<td><code>{{ $data-&gt;x ?? '----' }}</code></td>
+<td><code>{{ data.x or '----' }}</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>El logo del layout firmado se embebe <strong>por CID</strong> (ver <a href="#logo-inline-por-cid">Logo inline por
+CID</a>): el <code>mastersigned</code> pinta <code>&lt;img src="cid:{{ logo_cid }}"&gt;</code> solo
+si el Mailable adjuntó el logo.</p>
+</blockquote>
+<div class="admonition tip">
+<p class="admonition-title">El motor y <code>t()</code> no son exclusivos del correo</p>
+<p>El <code>TemplateEngine</code> (<code>tequio.Core.View</code>) es <strong>genérico</strong>: <code>render()</code> sirve para cualquier
+salida con plantilla (un reporte, un fichero generado), no solo el HTML del Mailable. Y
+<code>t()</code> (<code>tequio.Core.Translate</code>) es una función standalone: puedes traducir <strong>fuera</strong> de un
+Mailable —en un job, un cron o un command— sin pasar por el correo.</p>
+</div>
+<h2 id="drivers-mail_driver">Drivers (<code>MAIL_DRIVER</code>)<a class="headerlink" href="#drivers-mail_driver" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Driver</th>
+<th>Comportamiento</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>smtp</code> (<strong>default</strong>)</td>
+<td>Envío real por SMTP, según <code>MAIL_*</code> y <code>MAIL_ENCRYPTION</code> (<code>""</code>/<code>tls</code>/<code>ssl</code>). El default apunta a <strong>Mailpit</strong> (<code>MAIL_HOST=localhost</code>, <code>MAIL_PORT=1025</code>).</td>
+</tr>
+<tr>
+<td><code>log</code></td>
+<td>Loguea el correo completo (el MIME), <strong>no</strong> lo envía. <strong>Recomendado</strong> en dev sin SMTP.</td>
+</tr>
+<tr>
+<td><code>null</code> / <code>array</code></td>
+<td>No-op: lo descarta.</td>
+</tr>
+</tbody>
+</table>
+<p>El default es <code>MAIL_DRIVER=smtp</code>, apuntando a <strong>Mailpit</strong> (<code>MAIL_HOST=localhost</code>,
+<code>MAIL_PORT=1025</code>): con <code>docker compose up -d</code> los correos llegan a Mailpit y los ves en
+<code>http://localhost:8025</code>. Sin Mailpit (ni otro SMTP) ese envío falla, así que para dev sin
+SMTP <strong>pon <code>MAIL_DRIVER=log</code></strong>: el correo se <strong>vuelca al log</strong> sin abrir ninguna conexión
+SMTP — arrancas un cron que manda correo y ves el MIME completo en <code>logs/</code> sin levantar un
+servidor.</p>
+<h2 id="probar-correos-directo-en-el-repo">Probar correos directo en el repo<a class="headerlink" href="#probar-correos-directo-en-el-repo" title="Permanent link">&para;</a></h2>
+<p>¿Quieres ver el correo del demo <strong>sin</strong> levantar SMTP, redis ni Mailpit? El truco es
+combinar tres cosas: <strong>SQLite</strong> (<code>DATABASE_URL</code>, la BD de juguete), el driver <strong><code>log</code></strong>
+(<code>MAIL_DRIVER=log</code>, el MIME al log en vez de SMTP) y un <strong>broker a un puerto muerto</strong>
+(<code>BROKER_URL</code>) para que <code>Mail.queue</code> falle limpio y el cron caiga al envío síncrono:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nv">DATABASE_URL</span><span class="o">=</span><span class="s2">&quot;sqlite:///probar_correo.db&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="nv">MAIL_DRIVER</span><span class="o">=</span>log<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="nv">BROKER_URL</span><span class="o">=</span><span class="s2">&quot;redis://127.0.0.1:1/0&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-<span class="w"> </span><span class="s">&lt;&lt;&#39;PY&#39;</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="s"># Crea la tabla `notes` en la SQLite (vacía: el digest cuenta 0 y manda igual).</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="s">from tequio.Core.Database import Base, engine</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="s">import tequio.Models.Note  # registra Note en la metadata</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="s">Base.metadata.create_all(engine)</span>
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="s"># Dispara el cron a mano: Mail.queue(&quot;emails&quot;) falla (broker muerto) -&gt; cae a Mail.send,</span>
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="s"># y con MAIL_DRIVER=log el MIME COMPLETO se vuelca al log (subject, To, HTML, logo por CID).</span>
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="s">from tequio.Modules.Demo.Crons.DailyDigestCron import daily_digest</span>
+<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a>
+<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a><span class="s">daily_digest()</span>
+<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a><span class="s">PY</span>
+</code></pre></div>
+<p>En la salida verás la línea <code>Mailer[log] | correo NO enviado (driver=log):</code> seguida del
+<strong>MIME completo</strong> del correo (cabeceras <code>Subject</code>/<code>To</code>, el cuerpo HTML y el logo embebido por
+CID en base64). El <code>BROKER_URL</code> apunta a <code>127.0.0.1:1</code> (un puerto donde nadie escucha): así
+<code>Mail.queue</code> lanza <code>QueueUnavailableError</code> y el cron toma su rama síncrona — exactamente el
+fallback que documenta <a href="#el-cron-que-manda-correo">el cron del demo</a>. Borra la BD con
+<code>rm probar_correo.db</code> al terminar.</p>
+<blockquote>
+<p>En el proyecto que genera <code>tequio new</code>, el cron vive en <code>app.Modules.Demo.Crons.DailyDigestCron</code> y el modelo
+en <code>app.Models.Note</code> (no <code>tequio.*</code>): ajusta los imports del snippet a tus paquetes. Aquí van
+con el prefijo <code>tequio.*</code> porque corremos contra el repo del framework.</p>
+</blockquote>
+<h2 id="monolingue-vs-i18n">Monolingüe vs. i18n<a class="headerlink" href="#monolingue-vs-i18n" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Caso</th>
+<th>Patrón</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>i18n</strong></td>
+<td><code>subject</code> con <code>t()</code>, template que extiende los layouts y usa <code>t()</code>. El locale es <strong>explícito</strong> (lo pasa quien dispara el correo) o cae al <code>APP_FALLBACK_LOCALE</code>.</td>
+</tr>
+<tr>
+<td><strong>Monolingüe</strong></td>
+<td><code>subject</code> literal, template con texto fijo (sin <code>t()</code>, sin <code>extends</code>).</td>
+</tr>
+</tbody>
+</table>
+<p>Una app es monolingüe salvo que decidas traducir. tequio <strong>sí</strong> trae el i18n de los
+correos (la dep <code>i18nice[YAML]</code> y el wrapper <code>tequio.Core.Translate</code>); lo que NO trae es
+el i18n de la <strong>UI</strong> (eso vive en milpa, junto con la capa web).</p>
+<p>Como tequio es worker-side, <strong>no hay request ni <code>Accept-Language</code></strong> del cual sacar el
+idioma: el locale lo eliges tú. Para un correo multilingüe, pasa el <code>locale</code> como un
+primitivo más del Mailable (viaja en <code>init_kwargs</code> al encolar) y úsalo explícitamente en
+<code>build()</code>; si no lo pasas, <code>t()</code> cae al <code>APP_FALLBACK_LOCALE</code> configurado.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># Ejemplo ILUSTRATIVO del patrón i18n (subject + cuerpo desde catálogo, con locale explícito).</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="k">class</span><span class="w"> </span><span class="nc">NoteCreatedMailable</span><span class="p">(</span><span class="n">Mailable</span><span class="p">):</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">locale</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;es&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_title</span> <span class="o">=</span> <span class="n">title</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_locale</span> <span class="o">=</span> <span class="n">locale</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MailContent</span><span class="p">:</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>        <span class="n">subject</span> <span class="o">=</span> <span class="n">t</span><span class="p">(</span><span class="s2">&quot;demo/NoteCreated.subject&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_title</span><span class="p">},</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locale</span><span class="p">)</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>        <span class="k">return</span> <span class="n">MailContent</span><span class="p">(</span>
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>            <span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="p">,</span>
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>            <span class="n">template</span><span class="o">=</span><span class="s2">&quot;demo/emails/note_created.html.j2&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>            <span class="c1"># `locale` explícito en el contexto: gana sobre el current_locale() que inyecta el</span>
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>            <span class="c1"># Mailer, así el template traduce en el idioma que decidiste aunque corra en el worker.</span>
+<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a>            <span class="n">context</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_title</span><span class="p">,</span> <span class="s2">&quot;locale&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locale</span><span class="p">},</span>
+<a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a>        <span class="p">)</span>
+</code></pre></div>
+<h2 id="los-correos-del-demo-tequio-new-demo">Los correos del demo (<code>tequio new --demo</code>)<a class="headerlink" href="#los-correos-del-demo-tequio-new-demo" title="Permanent link">&para;</a></h2>
+<p>El módulo <code>Demo</code> trae un Mailable de referencia (en <code>Demo/Mail/DailyDigestMailable.py</code>) sobre un
+<strong>layout firmado</strong> (<code>Emails/Trans/mastersigned.html.j2</code>: header + contenido + footer con
+la firma del remitente + aviso de privacidad). El Mailable solo define <code>subject</code>, su
+<code>template</code> (que <code>{% extends %}</code> el firmado) y su contexto:</p>
+<table>
+<thead>
+<tr>
+<th>Mailable</th>
+<th>Disparador</th>
+<th>Demuestra</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DailyDigestMailable</code></td>
+<td>Cron <code>demo.daily_digest</code> (8:00 AM)</td>
+<td>Correo desde un <strong>cron</strong> sobre el layout firmado compartido; subject con el conteo; logo por CID.</td>
+</tr>
+</tbody>
+</table>
+<p>Recibe <strong>solo primitivos</strong> (<code>total</code>) — sin <code>User</code> ni dueño (tequio no tiene Auth; el digest
+es un resumen ANÓNIMO con el conteo de notas; ver
+<a href="../15-eventos-y-observers/">Eventos y Observers</a>). La firma del footer es del "Equipo
+tequio". El subject es monolingüe (ES) con el conteo; el plumbing i18n de <code>t()</code> sigue
+disponible (lo usan el footer firmado y el aviso de privacidad del layout).</p>
+<h3 id="el-cron-que-manda-correo">El cron que manda correo<a class="headerlink" href="#el-cron-que-manda-correo" title="Permanent link">&para;</a></h3>
+<p>El demo trae un <strong>resumen diario</strong> (<code>@cron_task</code> en <code>Demo/Crons/DailyDigestCron.py</code>) que <strong>sí manda un
+correo</strong> (es justo el caso que motivó traer el correo al worker): el scheduler lo dispara
+a las 8:00, cuenta las notas y manda el digest.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nd">@cron_task</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;demo.daily_digest&quot;</span><span class="p">,</span> <span class="n">schedule</span><span class="o">=</span><span class="n">daily_at</span><span class="p">(</span><span class="s2">&quot;08:00&quot;</span><span class="p">),</span> <span class="n">output</span><span class="o">=</span><span class="s2">&quot;demo_digest&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">daily_digest</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Corre en el WORKER cada día a las 8:00 (lo despacha `schedule run`).&quot;&quot;&quot;</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>    <span class="n">total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">NoteRepository</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">())</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>    <span class="n">mailable</span> <span class="o">=</span> <span class="n">DailyDigestMailable</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="n">total</span><span class="p">)</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>    <span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>        <span class="n">Mail</span><span class="o">.</span><span class="n">queue</span><span class="p">(</span><span class="n">mailable</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;admin@example.com&quot;</span><span class="p">],</span> <span class="n">queue</span><span class="o">=</span><span class="s2">&quot;emails&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>    <span class="k">except</span> <span class="n">QueueUnavailableError</span><span class="p">:</span>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>        <span class="n">Mail</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">mailable</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;admin@example.com&quot;</span><span class="p">])</span>   <span class="c1"># broker caído: envío síncrono</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Transcripción simplificada</p>
+<p>En el código real el destinatario es la constante <code>_DIGEST_TO</code> (= <code>"admin@example.com"</code>,
+el mismo valor) y, antes de enviar, el cron loguea el conteo con
+<code>logger.info("demo.daily_digest | {n} notas...", n=total)</code>. Aquí se omiten por brevedad;
+el flujo es idéntico.</p>
+</div>
+<p>Worker-side lo idiomático es <strong>encolar</strong> (<code>Mail.queue</code>) a la cola <code>emails</code>; si el broker
+no está, caemos al envío <strong>síncrono</strong> (<code>Mail.send</code>). Con el default <code>smtp</code> el correo va a
+Mailpit (<code>docker compose up -d</code>) y lo ves en la UI; con el driver <code>log</code> se vuelca al log
+sin SMTP (útil en dev sin Mailpit). Ver
+<a href="../14-programacion-cron/">Programación (cron)</a>.</p>
+<h2 id="siguiente-paso">Siguiente paso<a class="headerlink" href="#siguiente-paso" title="Permanent link">&para;</a></h2>
+<p><a href="../18-logging/">Logging</a>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Volver al principio
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      tequio · MIT
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.tracking", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copiado al portapapeles", "clipboard.copy": "Copiar al portapapeles", "search.result.more.one": "1 m\u00e1s en esta p\u00e1gina", "search.result.more.other": "# m\u00e1s en esta p\u00e1gina", "search.result.none": "No se encontraron documentos", "search.result.one": "1 documento encontrado", "search.result.other": "# documentos encontrados", "search.result.placeholder": "Teclee para comenzar b\u00fasqueda", "search.result.term.missing": "Falta", "select.version": "Seleccionar versi\u00f3n"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

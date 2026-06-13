@@ -1,0 +1,1961 @@
+
+<!doctype html>
+<html lang="es" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Núcleo de trabajo en segundo plano (Celery + SQLAlchemy + Typer) estilo milpa, para servicios worker-side: daemons, pipelines de datos, monitores y ETLs sin capa HTTP.">
+      
+      
+        <meta name="author" content="@Calcifux">
+      
+      
+      
+        <link rel="prev" href="../11-filtrado-y-paginacion/">
+      
+      
+        <link rel="next" href="../13-colas-y-tareas/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Jobs (@job) - tequio</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#jobs-en-background-job" class="md-skip">
+          Saltar a contenido
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Cabecera">
+    <a href=".." title="tequio" class="md-header__button md-logo" aria-label="tequio" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 6h3l3.29-3.3a1 1 0 0 1 1.42 0l2.58 2.59a1 1 0 0 1 0 1.41L19 9h-8v2a1 1 0 0 1-1 1 1 1 0 0 1-1-1V8a2 2 0 0 1 2-2m-6 5v4l-2.29 2.29a1 1 0 0 0 0 1.41l2.58 2.59a1 1 0 0 0 1.42 0L11 17h4a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h-7v1a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            tequio
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Jobs (@job)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Cambiar a oscuro"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Cambiar a oscuro" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Cambiar a claro"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Cambiar a claro" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Búsqueda" placeholder="Búsqueda" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Buscar">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Limpiar" aria-label="Limpiar" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Inicializando búsqueda
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/calcifux/tequio-core" title="Ir al repositorio" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    calcifux/tequio-core
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navegación" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="tequio" class="md-nav__button md-logo" aria-label="tequio" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 6h3l3.29-3.3a1 1 0 0 1 1.42 0l2.58 2.59a1 1 0 0 1 0 1.41L19 9h-8v2a1 1 0 0 1-1 1 1 1 0 0 1-1-1V8a2 2 0 0 1 2-2m-6 5v4l-2.29 2.29a1 1 0 0 0 0 1.41l2.58 2.59a1 1 0 0 0 1.42 0L11 17h4a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h-7v1a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9Z"/></svg>
+
+    </a>
+    tequio
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/calcifux/tequio-core" title="Ir al repositorio" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    calcifux/tequio-core
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inicio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Primeros pasos
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Primeros pasos
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01-introduccion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introducción
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02-instalacion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Instalación
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03-configuracion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuración
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04-estructura-directorios/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Estructura de directorios
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05-ciclo-de-vida/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ciclo de vida
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Arquitectura
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Arquitectura
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06-monolito-modular/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monolito modular
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../19-errores/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Errores de dominio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Consola
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Consola
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07-consola-jornal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    jornal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Base de datos
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Base de datos
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08-base-de-datos/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Base de datos
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09-modelos/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modelos
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10-repositorios-y-transacciones/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repositorios y transacciones
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../11-filtrado-y-paginacion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filtrado y paginación
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Background
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jobs (@job)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jobs (@job)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Tabla de contenidos">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Tabla de contenidos
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#declarar-un-job" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Declarar un job
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Declarar un job">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parametros-de-job" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parámetros de @job
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#disparar-un-job-dispatch-y-delay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disparar un job: .dispatch() y .delay()
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Disparar un job: .dispatch() y .delay()">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#desde-donde-lo-disparas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Desde dónde lo disparas
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reintentos-opt-in-solo-para-fallos-transitorios" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reintentos: opt-in, solo para fallos transitorios
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#job-vs-cron-la-distincion-clave" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Job vs. cron: la distinción clave
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#broker-caido-queueunavailableerror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Broker caído → QueueUnavailableError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#forma-tradicional-vs-estilo-milpa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Forma tradicional vs. estilo milpa
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#siguiente-paso" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Siguiente paso
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../13-colas-y-tareas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Colas y tareas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../14-programacion-cron/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Programación (cron)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Patrones (estilo milpa)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Patrones (estilo milpa)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../15-eventos-y-observers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Eventos y Observers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../16-mediator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mediator (command bus)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../17-pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Más
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Más
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../20-correo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Correo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../18-logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../21-lazy-y-scan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lazy imports y scan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Tabla de contenidos">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Tabla de contenidos
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#declarar-un-job" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Declarar un job
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Declarar un job">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parametros-de-job" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parámetros de @job
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#disparar-un-job-dispatch-y-delay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disparar un job: .dispatch() y .delay()
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Disparar un job: .dispatch() y .delay()">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#desde-donde-lo-disparas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Desde dónde lo disparas
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reintentos-opt-in-solo-para-fallos-transitorios" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reintentos: opt-in, solo para fallos transitorios
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#job-vs-cron-la-distincion-clave" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Job vs. cron: la distinción clave
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#broker-caido-queueunavailableerror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Broker caído → QueueUnavailableError
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#forma-tradicional-vs-estilo-milpa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Forma tradicional vs. estilo milpa
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#siguiente-paso" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Siguiente paso
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="jobs-en-background-job">Jobs en background (<code>@job</code>)<a class="headerlink" href="#jobs-en-background-job" title="Permanent link">&para;</a></h1>
+<p>Un <strong>job</strong> es trabajo pesado que disparas <strong>tú</strong> desde tu código y corre en el worker, no
+en el proceso que lo encola. tequio lo modela al estilo milpa (a su vez inspirado en
+<code>Job::dispatch</code> de Laravel): decoras una función con <code>@job</code>, la encolas con <code>.dispatch(...)</code>
+y sigues adelante sin esperar a que termine.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tequio.Modules.Demo.Jobs.ExportNotesJob</span><span class="w"> </span><span class="kn">import</span> <span class="n">export_user_notes</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">export_user_notes</span><span class="o">.</span><span class="n">dispatch</span><span class="p">()</span>   <span class="c1"># encola y regresa ya; lo corre `jornal queue work`</span>
+</code></pre></div>
+<p><code>@job</code> vive en <code>tequio/Core/Jobs</code> (no en <code>Core/Cron</code>) <strong>a propósito</strong>: un job y un cron son
+dos modelos de ejecución distintos y mezclarlos lleva a errores sutiles. Más abajo está la
+tabla que los contrasta.</p>
+<h2 id="declarar-un-job">Declarar un job<a class="headerlink" href="#declarar-un-job" title="Permanent link">&para;</a></h2>
+<p>Decora la función con <code>@job</code> y déjala <strong>en cualquier parte del árbol</strong> de tu módulo (el
+discovery importa todo el árbol). El módulo Demo la pone, por la convención de los
+generadores <code>make:*</code>, en <code>tequio/Modules/Demo/Jobs/ExportNotesJob.py</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Modules/Demo/Jobs/ExportNotesJob.py</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">loguru</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tequio.Core.Jobs</span><span class="w"> </span><span class="kn">import</span> <span class="n">job</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tequio.Modules.Demo.Repositories.NoteRepository</span><span class="w"> </span><span class="kn">import</span> <span class="n">NoteRepository</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="nd">@job</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;demo.export_notes&quot;</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="s2">&quot;exports&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="k">def</span><span class="w"> </span><span class="nf">export_user_notes</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Corre en el WORKER: reúne las notas (el &#39;export&#39; real iría aquí).&quot;&quot;&quot;</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="n">notes</span> <span class="o">=</span> <span class="n">NoteRepository</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;demo.export_notes | </span><span class="si">{n}</span><span class="s2"> notas exportadas (en el worker)&quot;</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">notes</span><span class="p">))</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;exported&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">notes</span><span class="p">)}</span>
+</code></pre></div>
+<p><code>@job</code> es un wrapper fino sobre <code>@celery_app.task</code>: auto-nombra la task (<code>&lt;módulo&gt;.&lt;func&gt;</code> si
+no pasas <code>name</code>), la registra y devuelve un <strong>handle</strong> <code>Job</code>. El descubrimiento es el mismo
+que cualquier task: el Registry importa <strong>todo el árbol</strong> de cada módulo al arrancar y el
+decorador registra la task de Celery. No hay registro nuevo que mantener.</p>
+<blockquote>
+<p>Para crear el archivo del job con su esqueleto ya escrito, usa el generador:
+<code>python jornal make job &lt;Módulo&gt; &lt;NombreDelJob&gt;</code> (≈ <code>make:job</code>). El stub queda en
+<code>Modules/&lt;Módulo&gt;/Jobs/&lt;NombreDelJob&gt;.py</code> por convención, listo para <code>.dispatch(...)</code> —
+de ahí lo puedes mover/aplanar si prefieres, el discovery lo encuentra igual.</p>
+</blockquote>
+<h3 id="parametros-de-job">Parámetros de <code>@job</code><a class="headerlink" href="#parametros-de-job" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Parámetro</th>
+<th>Tipo</th>
+<th>Para qué</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><code>str \| None</code></td>
+<td>Nombre de la task. <code>None</code> = <code>&lt;módulo&gt;.&lt;función&gt;</code> (auto).</td>
+</tr>
+<tr>
+<td><code>queue</code></td>
+<td><code>str \| None</code></td>
+<td>Cola por defecto del job (ver <a href="../13-colas-y-tareas/">Colas y tareas</a>). <code>None</code> = cola por defecto.</td>
+</tr>
+<tr>
+<td><code>retry_for</code></td>
+<td><code>tuple[type[BaseException], ...]</code></td>
+<td>Excepciones <strong>transitorias</strong> que disparan reintento. Vacío = fire-and-forget.</td>
+</tr>
+<tr>
+<td><code>max_retries</code></td>
+<td><code>int \| None</code></td>
+<td>Máx. de reintentos (solo aplica con <code>retry_for</code>). <code>None</code> = <code>settings.task_max_retries</code>.</td>
+</tr>
+<tr>
+<td><code>bind</code></td>
+<td><code>bool</code></td>
+<td><code>True</code> da <code>self</code> como primer argumento (para leer <code>self.request.retries</code>).</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><code>schedule=</code> está <strong>prohibido</strong> en <code>@job</code>: si pasas uno, lanza <code>ValueError</code>. Para tareas
+programadas usa <code>@cron_task</code> (ver <a href="../14-programacion-cron/">Programación (cron)</a>).</p>
+</blockquote>
+<h2 id="disparar-un-job-dispatch-y-delay">Disparar un job: <code>.dispatch()</code> y <code>.delay()</code><a class="headerlink" href="#disparar-un-job-dispatch-y-delay" title="Permanent link">&para;</a></h2>
+<p>El handle <code>Job</code> expone dos formas de encolar y una de correr síncrono:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">export_user_notes</span><span class="o">.</span><span class="n">dispatch</span><span class="p">()</span>                    <span class="c1"># encola (broker-guarded) → recomendado</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">export_user_notes</span><span class="o">.</span><span class="n">dispatch</span><span class="p">(</span><span class="n">queue</span><span class="o">=</span><span class="s2">&quot;urgent&quot;</span><span class="p">)</span>      <span class="c1"># encola, sobrescribiendo la cola del decorador</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">export_user_notes</span><span class="o">.</span><span class="n">delay</span><span class="p">()</span>                        <span class="c1"># API cruda de Celery (sin broker_guard)</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">export_user_notes</span><span class="p">()</span>                              <span class="c1"># SÍNCRONO, en el proceso actual (tests)</span>
+</code></pre></div>
+<ul>
+<li><strong><code>.dispatch(*args, queue=None, **kwargs)</code></strong> — el camino idiomático. Encola con
+  <code>apply_async</code>, envuelto en <code>broker_guard</code> (ver abajo). El kwarg <code>queue</code> sobrescribe, solo
+  para esa llamada, la cola declarada en <code>@job(queue=...)</code>. (El job del demo no recibe
+  argumentos; uno que sí los reciba se despacha con <code>.dispatch(arg1, kw=…)</code>.)</li>
+<li><strong><code>.delay(...)</code></strong> — el handle delega cualquier atributo no definido al <code>Task</code> de Celery
+  (<code>.delay</code>, <code>.apply_async</code>, <code>.s</code>, <code>.si</code>, <code>.name</code>…). Úsalo para firmas/chains avanzados; ojo:
+  <strong>no</strong> pasa por <code>broker_guard</code>, así que un broker caído sale como el stacktrace crudo de
+  kombu en vez de un error limpio.</li>
+<li><strong>Llamarlo directo <code>export_user_notes()</code></strong> — lo corre <strong>síncrono</strong> en el proceso actual,
+  sin encolar. Útil en tests para verificar la lógica sin levantar un worker.</li>
+</ul>
+<h3 id="desde-donde-lo-disparas">Desde dónde lo disparas<a class="headerlink" href="#desde-donde-lo-disparas" title="Permanent link">&para;</a></h3>
+<p>En tequio (worker-side, sin capa HTTP) disparas el job desde el código que ya corre: un
+comando de consola, un observer, un service, otro job. Encolar regresa de inmediato; el
+trabajo pesado corre en el worker:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Encola y sigue; el broker caído sale como QueueUnavailableError, nunca un drop mudo.</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">export_user_notes</span><span class="o">.</span><span class="n">dispatch</span><span class="p">()</span>
+</code></pre></div>
+<p>No hay bloqueo: el export pesado corre en el worker mientras el llamador continúa. Para
+procesar la cola, levanta el worker con <code>python jornal queue work</code> (o
+<code>python jornal queue work --queue=exports</code> para consumir esa cola en particular).</p>
+<div class="admonition note">
+<p class="admonition-title">Esto en milpa</p>
+<p>En milpa el disparador típico de un job es un <strong>endpoint HTTP</strong>, que encola y responde
+<code>202 Accepted</code> sin esperar. tequio no tiene capa web: el job se dispara desde código
+worker-side (comandos, observers, services). La capa HTTP vive en
+<a href="https://github.com/calcifux/milpa">milpa</a>.</p>
+</div>
+<h2 id="reintentos-opt-in-solo-para-fallos-transitorios">Reintentos: opt-in, solo para fallos transitorios<a class="headerlink" href="#reintentos-opt-in-solo-para-fallos-transitorios" title="Permanent link">&para;</a></h2>
+<p>Por defecto un job es <strong>fire-and-forget</strong>: si revienta, no se reintenta. Para activar
+reintentos pasa <code>retry_for</code> con las excepciones <strong>transitorias</strong> que sí vale la pena volver a
+intentar (timeouts, desconexiones, fallos de red):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nd">@job</span><span class="p">(</span><span class="n">retry_for</span><span class="o">=</span><span class="p">(</span><span class="ne">ConnectionError</span><span class="p">,</span> <span class="ne">TimeoutError</span><span class="p">),</span> <span class="n">max_retries</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">sync_invoices</span><span class="p">(</span><span class="n">account_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="o">...</span>
+</code></pre></div>
+<p>Bajo el cofre, <code>retry_for</code> aplica <code>retry_policy(...)</code> de <code>tequio/Core/CeleryApp/Retry.py</code>:
+cablea <code>autoretry_for</code> + backoff exponencial con jitter. Los defaults (<code>max_retries</code>, backoff
+y su tope) salen de <code>.env</code> (<code>TASK_MAX_RETRIES</code>, <code>TASK_RETRY_BACKOFF</code>, <code>TASK_RETRY_BACKOFF_MAX</code>)
+o los pisas a mano por job. Ver <a href="../13-colas-y-tareas/">Colas y tareas</a>.</p>
+<blockquote>
+<p><strong>No listes excepciones permanentes</strong> en <code>retry_for</code> (validación, archivo inexistente):
+reintentar no las arregla y solo agota intentos. Si necesitas reintentar a mano dentro de
+la función, usa <code>bind=True</code> para recibir <code>self</code> y llamar <code>self.retry(...)</code>.</p>
+</blockquote>
+<h2 id="job-vs-cron-la-distincion-clave">Job vs. cron: la distinción clave<a class="headerlink" href="#job-vs-cron-la-distincion-clave" title="Permanent link">&para;</a></h2>
+<p>Ambos corren en el worker de Celery, pero responden a preguntas distintas. Esta es la regla
+mental:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>Job</strong> (<code>@job</code>, <code>Core/Jobs</code>)</th>
+<th><strong>Cron</strong> (<code>@cron_task</code>, <code>Core/Cron</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Quién lo dispara</strong></td>
+<td><strong>Tú</strong>, desde tu código (<code>.dispatch()</code>).</td>
+<td>El <strong>scheduler</strong> (<code>jornal schedule run</code>, vía crontab del SO).</td>
+</tr>
+<tr>
+<td><strong>Cuándo corre</strong></td>
+<td>On-demand, cuando lo encolas.</td>
+<td>A una cadencia fija (<code>schedule="*/5 * * * *"</code>).</td>
+</tr>
+<tr>
+<td><strong>Reintentos</strong></td>
+<td>Opt-in (<code>retry_for=</code>).</td>
+<td><strong>Nunca</strong> (se re-agenda solo en la próxima corrida).</td>
+</tr>
+<tr>
+<td><strong>Anti-overlap (lock)</strong></td>
+<td>No.</td>
+<td>Sí (<code>without_overlapping</code>, lock en Redis).</td>
+</tr>
+<tr>
+<td><strong>Env-gating / output routing</strong></td>
+<td>No.</td>
+<td>Sí (<code>environments=</code>, <code>output=</code>).</td>
+</tr>
+</tbody>
+</table>
+<p>La regla rápida: <strong>si lo disparas tú</strong> (un comando, un evento) → <code>@job</code>. <strong>Si el reloj lo
+dispara</strong> a intervalos → <code>@cron_task</code>. Por eso un cron <strong>no</strong> lleva reintentos (reintentar
+encima de un re-agendado duplicaría trabajo) y un job <strong>no</strong> lleva lock (tú controlas cuándo
+y cuántas veces lo disparas).</p>
+<h2 id="broker-caido-queueunavailableerror">Broker caído → <code>QueueUnavailableError</code><a class="headerlink" href="#broker-caido-queueunavailableerror" title="Permanent link">&para;</a></h2>
+<p><code>.dispatch()</code> envuelve el encolado en <code>broker_guard()</code>. Si el broker (Redis por defecto) no
+responde, Celery/kombu lanzarían un error de bajo nivel poco claro; <code>broker_guard</code> lo traduce
+a un <strong><code>QueueUnavailableError</code></strong> con un mensaje accionable (qué falta: broker + worker, y que
+existe el camino síncrono).</p>
+<p><code>QueueUnavailableError</code> hereda de <code>DomainError</code> (ver <a href="../19-errores/">Errores de dominio</a>), así
+que el borde de error del CLI lo rinde como un mensaje <strong>limpio</strong> con su código
+<code>queue_unavailable</code>, sin escupir el traceback de kombu. Faro, no silencio: el broker caído
+sale como un error claro y observable, nunca un 500 técnico ni un drop mudo.</p>
+<div class="admonition note">
+<p class="admonition-title">El status_code y RFC 9457</p>
+<p><code>QueueUnavailableError</code> carga <code>status_code = 503</code> por herencia de <code>DomainError</code>. En
+milpa, un handler HTTP global rinde ese código como <code>application/problem+json</code> (RFC 9457)
+ante un cliente web. tequio es worker-side: no hay capa HTTP, así que el <code>status_code</code>
+queda disponible en el objeto pero quien lo rinde es el borde del CLI (mensaje + código),
+no una respuesta HTTP. La capa web vive en <a href="https://github.com/calcifux/milpa">milpa</a>.</p>
+</div>
+<blockquote>
+<p><code>.delay()</code> <strong>no</strong> pasa por <code>broker_guard</code>: con el broker caído verías el stacktrace de
+kombu en vez del error limpio. Por eso, en código de la app, prefiere <code>.dispatch()</code>.</p>
+</blockquote>
+<h2 id="forma-tradicional-vs-estilo-milpa">Forma tradicional vs. estilo milpa<a class="headerlink" href="#forma-tradicional-vs-estilo-milpa" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Forma tradicional (Celery a pelo)</th>
+<th>Estilo milpa (<code>@job</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Declarar</td>
+<td><code>@celery_app.task(name="...", autoretry_for=(...), max_retries=..., retry_backoff=...)</code></td>
+<td><code>@job(name="...", retry_for=(...))</code> — el backoff sale de <code>.env</code>.</td>
+</tr>
+<tr>
+<td>Encolar</td>
+<td><code>task.apply_async(args=[...], queue="...")</code></td>
+<td><code>task.dispatch(..., queue="...")</code></td>
+</tr>
+<tr>
+<td>Broker caído</td>
+<td>Stacktrace crudo de kombu.</td>
+<td><code>QueueUnavailableError</code> con mensaje accionable.</td>
+</tr>
+<tr>
+<td>En tests</td>
+<td>Levantar worker o <code>task.apply()</code>.</td>
+<td><code>task(...)</code> lo corre síncrono.</td>
+</tr>
+</tbody>
+</table>
+<p>El estilo milpa no te quita nada de Celery (el handle delega al <code>Task</code>), solo enmascara el
+ceremonial repetitivo y el manejo del broker caído.</p>
+<h2 id="siguiente-paso">Siguiente paso<a class="headerlink" href="#siguiente-paso" title="Permanent link">&para;</a></h2>
+<p><a href="../13-colas-y-tareas/">Colas y tareas</a>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Volver al principio
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      tequio · MIT
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.tracking", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copiado al portapapeles", "clipboard.copy": "Copiar al portapapeles", "search.result.more.one": "1 m\u00e1s en esta p\u00e1gina", "search.result.more.other": "# m\u00e1s en esta p\u00e1gina", "search.result.none": "No se encontraron documentos", "search.result.one": "1 documento encontrado", "search.result.other": "# documentos encontrados", "search.result.placeholder": "Teclee para comenzar b\u00fasqueda", "search.result.term.missing": "Falta", "select.version": "Seleccionar versi\u00f3n"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

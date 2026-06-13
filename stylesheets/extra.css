@@ -1,0 +1,20 @@
+/* ============================================================================
+   tequio docs — paleta StackCraft (la misma del front del demo de milpa):
+     Forge #FF6B1A (primary) · Spark #FF8A4D (hover/accent) · Carbon #0A0A0A
+     Iron #1A1A1A · Steel #4A4A4A · Mist #E6E6E6
+   mkdocs-material no trae estos hex como colores nombrados: se inyectan como
+   esquema `custom` (ver palette en mkdocs.yml).
+   ============================================================================ */
+
+:root {
+    --md-primary-fg-color:        #FF6B1A; /* Forge */
+    --md-primary-fg-color--light: #FF8A4D; /* Spark */
+    --md-primary-fg-color--dark:  #E55600; /* Forge oscurecido (estados pressed) */
+    --md-accent-fg-color:         #FF8A4D; /* Spark: hover de links/botones */
+}
+
+/* En oscuro, los fondos acercan a Carbon/Iron (como el tema dark del front). */
+[data-md-color-scheme="slate"] {
+    --md-default-bg-color: #0f0f0f;       /* entre Carbon y el slate default */
+    --md-code-bg-color:    #1a1a1a;       /* Iron */
+}

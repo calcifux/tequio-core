@@ -1,0 +1,2089 @@
+
+<!doctype html>
+<html lang="es" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Núcleo de trabajo en segundo plano (Celery + SQLAlchemy + Typer) estilo milpa, para servicios worker-side: daemons, pipelines de datos, monitores y ETLs sin capa HTTP.">
+      
+      
+        <meta name="author" content="@Calcifux">
+      
+      
+      
+        <link rel="prev" href="../19-errores/">
+      
+      
+        <link rel="next" href="../08-base-de-datos/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>jornal - tequio</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#consola-tequio-jornal" class="md-skip">
+          Saltar a contenido
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Cabecera">
+    <a href=".." title="tequio" class="md-header__button md-logo" aria-label="tequio" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 6h3l3.29-3.3a1 1 0 0 1 1.42 0l2.58 2.59a1 1 0 0 1 0 1.41L19 9h-8v2a1 1 0 0 1-1 1 1 1 0 0 1-1-1V8a2 2 0 0 1 2-2m-6 5v4l-2.29 2.29a1 1 0 0 0 0 1.41l2.58 2.59a1 1 0 0 0 1.42 0L11 17h4a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h-7v1a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            tequio
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              jornal
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Cambiar a oscuro"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Cambiar a oscuro" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Cambiar a claro"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Cambiar a claro" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Búsqueda" placeholder="Búsqueda" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Buscar">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Limpiar" aria-label="Limpiar" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Inicializando búsqueda
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/calcifux/tequio-core" title="Ir al repositorio" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    calcifux/tequio-core
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navegación" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="tequio" class="md-nav__button md-logo" aria-label="tequio" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 6h3l3.29-3.3a1 1 0 0 1 1.42 0l2.58 2.59a1 1 0 0 1 0 1.41L19 9h-8v2a1 1 0 0 1-1 1 1 1 0 0 1-1-1V8a2 2 0 0 1 2-2m-6 5v4l-2.29 2.29a1 1 0 0 0 0 1.41l2.58 2.59a1 1 0 0 0 1.42 0L11 17h4a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h1a1 1 0 0 0 1-1v-1h-7v1a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V9Z"/></svg>
+
+    </a>
+    tequio
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/calcifux/tequio-core" title="Ir al repositorio" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    calcifux/tequio-core
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inicio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Primeros pasos
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Primeros pasos
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01-introduccion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introducción
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02-instalacion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Instalación
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03-configuracion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuración
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04-estructura-directorios/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Estructura de directorios
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05-ciclo-de-vida/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ciclo de vida
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Arquitectura
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Arquitectura
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06-monolito-modular/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monolito modular
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../19-errores/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Errores de dominio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Consola
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Consola
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    jornal
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    jornal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Tabla de contenidos">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Tabla de contenidos
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#comandos-incluidos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comandos incluidos
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#new-crear-un-proyecto" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        new: crear un proyecto
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#make-los-11-generadores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        make: los 11 generadores
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migrate-db-queue-schedule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        migrate, db, queue, schedule
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#como-funciona-el-descubrimiento" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cómo funciona el descubrimiento
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#crear-un-comando" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Crear un comando
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Crear un comando">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#en-un-modulo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        En un módulo
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-nivel-de-proyecto-sin-modulo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A nivel de proyecto (sin módulo)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#el-decorador-console_command" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        El decorador console_command
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#el-borde-de-error-del-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        El borde de error del CLI
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#siguiente-paso" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Siguiente paso
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Base de datos
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Base de datos
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08-base-de-datos/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Base de datos
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09-modelos/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modelos
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10-repositorios-y-transacciones/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repositorios y transacciones
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../11-filtrado-y-paginacion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filtrado y paginación
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Background
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../12-jobs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jobs (@job)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../13-colas-y-tareas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Colas y tareas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../14-programacion-cron/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Programación (cron)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Patrones (estilo milpa)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Patrones (estilo milpa)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../15-eventos-y-observers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Eventos y Observers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../16-mediator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mediator (command bus)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../17-pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Más
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Más
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../20-correo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Correo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../18-logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../21-lazy-y-scan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lazy imports y scan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Tabla de contenidos">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Tabla de contenidos
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#comandos-incluidos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comandos incluidos
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#new-crear-un-proyecto" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        new: crear un proyecto
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#make-los-11-generadores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        make: los 11 generadores
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migrate-db-queue-schedule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        migrate, db, queue, schedule
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#como-funciona-el-descubrimiento" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cómo funciona el descubrimiento
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#crear-un-comando" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Crear un comando
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Crear un comando">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#en-un-modulo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        En un módulo
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-nivel-de-proyecto-sin-modulo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A nivel de proyecto (sin módulo)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#el-decorador-console_command" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        El decorador console_command
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#el-borde-de-error-del-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        El borde de error del CLI
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#siguiente-paso" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Siguiente paso
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="consola-tequio-jornal">Consola (<code>tequio</code> / <code>jornal</code>)<a class="headerlink" href="#consola-tequio-jornal" title="Permanent link">&para;</a></h1>
+<p>tequio trae un CLI estilo <code>artisan</code>. Hay <strong>dos formas de invocarlo</strong>, ambas corren el
+mismo kernel de consola:</p>
+<ul>
+<li><strong><code>tequio</code></strong> — el comando que se instala en el <code>PATH</code> al hacer <code>pip install tequio-core</code>
+  (entry point <code>tequio = tequio.Core.Console.Cli:run</code> en <code>pyproject.toml</code>).</li>
+<li><strong><code>./jornal</code></strong> — un launcher fino en la <strong>raíz del proyecto</strong> (mismo nombre que en
+  milpa, a propósito). Es solo <code>from tequio.Core.Console.Cli import run; run()</code>, para
+  tenerlo a la mano sin instalar el paquete en el <code>PATH</code>.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>tequio<span class="w"> </span>list<span class="w">                          </span><span class="c1"># lista TODOS los comandos</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>jornal<span class="w"> </span>list<span class="w">            </span><span class="c1"># idéntico, vía el launcher raíz</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>./jornal<span class="w"> </span>list<span class="w">                        </span><span class="c1"># si el venv está activo</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>tequio<span class="w"> </span>--help<span class="w">                        </span><span class="c1"># ayuda de Typer (solo grupos)</span>
+</code></pre></div>
+<p>El kernel real vive en <code>tequio/Core/Console/Cli.py</code>; el <code>jornal</code> de la raíz no contiene
+lógica.</p>
+<h2 id="comandos-incluidos">Comandos incluidos<a class="headerlink" href="#comandos-incluidos" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Comando</th>
+<th>Qué hace</th>
+<th>Equivalente Laravel</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tequio list</code></td>
+<td>Lista todos los comandos agrupados, con su ayuda (tabla rich coloreada).</td>
+<td><code>php artisan list</code></td>
+</tr>
+<tr>
+<td><code>tequio new &lt;proyecto&gt; [--demo]</code></td>
+<td>Crea un proyecto nuevo desde la plantilla embebida.</td>
+<td><code>laravel new</code></td>
+</tr>
+<tr>
+<td><code>tequio make &lt;generador&gt; ...</code></td>
+<td>Genera stubs (modelo, job, handler, …). Ver abajo.</td>
+<td><code>php artisan make:*</code></td>
+</tr>
+<tr>
+<td><code>tequio migrate make/run/status/rollback</code></td>
+<td>Migraciones de esquema con Alembic.</td>
+<td><code>php artisan migrate*</code></td>
+</tr>
+<tr>
+<td><code>tequio db seed</code></td>
+<td>Corre los seeders descubiertos.</td>
+<td><code>php artisan db:seed</code></td>
+</tr>
+<tr>
+<td><code>tequio db fresh</code></td>
+<td>Baja todo, re-migra y siembra. <strong>Destructivo.</strong></td>
+<td><code>php artisan migrate:fresh --seed</code></td>
+</tr>
+<tr>
+<td><code>tequio queue work</code></td>
+<td>Arranca el worker de Celery (procesa las tareas).</td>
+<td><code>php artisan queue:work</code></td>
+</tr>
+<tr>
+<td><code>tequio schedule work</code></td>
+<td>Arranca el beat (despertador de crons). Una sola instancia.</td>
+<td><code>php artisan schedule:work</code></td>
+</tr>
+<tr>
+<td><code>tequio schedule run</code></td>
+<td>Despacha los crons que tocan este minuto. Lo llama el crontab del SO.</td>
+<td><code>php artisan schedule:run</code></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>tequio<span class="w"> </span>queue<span class="w"> </span>work<span class="w"> </span>--queue<span class="w"> </span>emails,reports<span class="w"> </span>--concurrency<span class="w"> </span><span class="m">8</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>tequio<span class="w"> </span>migrate<span class="w"> </span>make<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;crear tabla facturas&quot;</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>tequio<span class="w"> </span>migrate<span class="w"> </span>run
+</code></pre></div>
+<p>Ver <a href="../13-colas-y-tareas/">Colas y tareas</a> y <a href="../14-programacion-cron/">Programación (cron)</a>
+para <code>queue work</code> / <code>schedule run</code> / <code>schedule work</code>, y
+<a href="../08-base-de-datos/">Base de datos</a> para <code>migrate</code> / <code>db</code>.</p>
+<blockquote>
+<p>En milpa hay además un <code>jornal serve</code> que levanta uvicorn. En tequio <strong>no existe</strong>:
+no hay capa HTTP que servir. Eso vive en <a href="https://github.com/calcifux/milpa">milpa</a>.</p>
+</blockquote>
+<h2 id="new-crear-un-proyecto"><code>new</code>: crear un proyecto<a class="headerlink" href="#new-crear-un-proyecto" title="Permanent link">&para;</a></h2>
+<p><code>tequio new &lt;proyecto&gt;</code> copia un skeleton embebido (se localiza con
+<code>importlib.resources</code>, no con aritmética de <code>__file__</code>) y deja un proyecto listo para
+correr: <code>app/</code>, <code>jornal</code>, <code>.env</code> (copiado de <code>.env.example</code>) y <code>migrations/</code>, con la
+config apuntando a TU código (<code>MODULES_PACKAGE=app.Modules…</code>).</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>tequio<span class="w"> </span>new<span class="w"> </span>mi-servicio
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">cd</span><span class="w"> </span>mi-servicio
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>uv<span class="w"> </span>sync<span class="w">                       </span><span class="c1"># instala tequio + dependencias</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>python<span class="w"> </span>jornal<span class="w"> </span>list<span class="w">            </span><span class="c1"># ve los comandos disponibles</span>
+</code></pre></div>
+<p>Con <code>--demo</code> (alias <code>--full-demo</code>) copia además el <strong>módulo Demo</strong>: el sistema worker-side
+completo de referencia (notas + eventos/observers + Mediator/Pipeline + jobs/crons +
+factories/seeders), su modelo <code>Note</code> y la migración de la tabla <code>notes</code>, reescribiendo los
+imports del framework (<code>tequio.Modules</code>/<code>tequio.Models</code>) a los del proyecto (<code>app.*</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>tequio<span class="w"> </span>new<span class="w"> </span>mi-servicio<span class="w"> </span>--demo
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">cd</span><span class="w"> </span>mi-servicio
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>uv<span class="w"> </span>sync
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>python<span class="w"> </span>jornal<span class="w"> </span>migrate<span class="w"> </span>run<span class="w">      </span><span class="c1"># aplica la migración que ya trae el demo</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>python<span class="w"> </span>jornal<span class="w"> </span>db<span class="w"> </span>seed<span class="w">          </span><span class="c1"># puebla notas (DemoSeeder)</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>python<span class="w"> </span>jornal<span class="w"> </span>queue<span class="w"> </span>work<span class="w">       </span><span class="c1"># arranca el worker (procesa los @job)</span>
+</code></pre></div>
+<p>Es seguro: si el destino existe y no está vacío, aborta con <code>FileExistsError</code> (nunca
+sobrescribe trabajo del usuario).</p>
+<h2 id="make-los-11-generadores"><code>make</code>: los 11 generadores<a class="headerlink" href="#make-los-11-generadores" title="Permanent link">&para;</a></h2>
+<p><code>tequio make &lt;generador&gt;</code> produce un stub idiomático y lo monta <strong>por convención</strong> (no
+hay que registrarlo a mano). Es <strong>idempotente</strong>: nunca sobrescribe un archivo existente
+(si ya existe, aborta con exit code <code>1</code>). Crea la carpeta de convención y su
+<code>__init__.py</code> si faltan.</p>
+<p>Casi todos reciben primero el <strong>módulo</strong> y luego el nombre; <code>model</code> es la excepción
+(escribe en <code>app/Models</code>, fuera de los módulos).</p>
+<table>
+<thead>
+<tr>
+<th>Generador</th>
+<th>Firma</th>
+<th>Crea en</th>
+<th>Para qué</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>make model</code></td>
+<td><code>make model &lt;Name&gt;</code></td>
+<td><code>app/Models/&lt;Name&gt;.py</code></td>
+<td>Modelo SQLAlchemy (con <code>TimestampMixin</code>).</td>
+</tr>
+<tr>
+<td><code>make repository</code></td>
+<td><code>make repository &lt;Module&gt; &lt;Model&gt;</code></td>
+<td><code>Modules/&lt;M&gt;/Repositories/&lt;Model&gt;Repository.py</code></td>
+<td><code>Repository[Model, int]</code> (CRUD tipado).</td>
+</tr>
+<tr>
+<td><code>make service</code></td>
+<td><code>make service &lt;Module&gt; &lt;Name&gt;</code></td>
+<td><code>Modules/&lt;M&gt;/Services/&lt;Name&gt;Service.py</code></td>
+<td>Caso de uso en UNA transacción (<code>@transactional</code>).</td>
+</tr>
+<tr>
+<td><code>make serializer</code></td>
+<td><code>make serializer &lt;Module&gt; &lt;Name&gt;</code></td>
+<td><code>Modules/&lt;M&gt;/Serializers/&lt;Name&gt;Serializer.py</code></td>
+<td>Función <code>modelo → dict</code> JSON-able.</td>
+</tr>
+<tr>
+<td><code>make factory</code></td>
+<td><code>make factory &lt;Module&gt; &lt;Model&gt;</code></td>
+<td><code>Modules/&lt;M&gt;/Factories/&lt;Model&gt;Factory.py</code></td>
+<td><code>Factory[Model]</code> con datos Faker.</td>
+</tr>
+<tr>
+<td><code>make seeder</code></td>
+<td><code>make seeder &lt;Module&gt; &lt;Name&gt;</code></td>
+<td><code>Modules/&lt;M&gt;/Seeders/&lt;Name&gt;Seeder.py</code></td>
+<td><code>Seeder</code> (se auto-descubre en <code>db seed</code>).</td>
+</tr>
+<tr>
+<td><code>make job</code></td>
+<td><code>make job &lt;Module&gt; &lt;Name&gt;</code></td>
+<td><code>Modules/&lt;M&gt;/Jobs/&lt;Name&gt;.py</code></td>
+<td>Job de background (<code>@job</code> + <code>.dispatch()</code>).</td>
+</tr>
+<tr>
+<td><code>make observer</code></td>
+<td><code>make observer &lt;Module&gt; &lt;Name&gt;</code></td>
+<td><code>Modules/&lt;M&gt;/Observers/&lt;Name&gt;Observer.py</code></td>
+<td>Observer (+ su evento) — patrón Events.</td>
+</tr>
+<tr>
+<td><code>make handler</code></td>
+<td><code>make handler &lt;Module&gt; &lt;Name&gt;</code></td>
+<td><code>Modules/&lt;M&gt;/Handlers/&lt;Name&gt;Handler.py</code></td>
+<td>Command handler — patrón Mediator.</td>
+</tr>
+<tr>
+<td><code>make pipe</code></td>
+<td><code>make pipe &lt;Module&gt; &lt;Name&gt;</code></td>
+<td><code>Modules/&lt;M&gt;/Pipes/&lt;Name&gt;.py</code></td>
+<td>Etapa de un Pipeline.</td>
+</tr>
+<tr>
+<td><code>make mailable</code></td>
+<td><code>make mailable &lt;Module&gt; &lt;Name&gt;</code></td>
+<td><code>Modules/&lt;M&gt;/Mail/&lt;Name&gt;Mailable.py</code></td>
+<td>Mailable (<code>build() -&gt; MailContent</code>); el stub encola a la cola <code>emails</code>.</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>tequio<span class="w"> </span>make<span class="w"> </span>model<span class="w"> </span>Invoice
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>tequio<span class="w"> </span>make<span class="w"> </span>repository<span class="w"> </span>Billing<span class="w"> </span>Invoice
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>tequio<span class="w"> </span>make<span class="w"> </span>job<span class="w"> </span>Billing<span class="w"> </span>NightlyClose
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>tequio<span class="w"> </span>make<span class="w"> </span>handler<span class="w"> </span>Billing<span class="w"> </span>ClosePeriod
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>tequio<span class="w"> </span>make<span class="w"> </span>mailable<span class="w"> </span>Billing<span class="w"> </span>InvoicePaid
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1"># ✓ creado: app/Modules/Billing/Mail/InvoicePaidMailable.py</span>
+</code></pre></div>
+<blockquote>
+<p>Los generadores escriben bajo <code>APP_DIR</code> (default <code>app/</code>), que se resuelve en <strong>cada
+llamada</strong> relativo al <code>cwd</code> donde corres <code>tequio</code> — no a la ubicación del paquete
+instalado en <code>site-packages</code>.</p>
+</blockquote>
+<h2 id="migrate-db-queue-schedule"><code>migrate</code>, <code>db</code>, <code>queue</code>, <code>schedule</code><a class="headerlink" href="#migrate-db-queue-schedule" title="Permanent link">&para;</a></h2>
+<p>Estos comandos son <strong>grupos</strong>: se invocan como <code>&lt;grupo&gt; &lt;subcomando&gt;</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>tequio<span class="w"> </span>migrate<span class="w"> </span>make<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;crear notas&quot;</span><span class="w"> </span>--autogenerate<span class="w">   </span><span class="c1"># genera una revisión (o --empty)</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>tequio<span class="w"> </span>migrate<span class="w"> </span>run<span class="w"> </span>--to<span class="w"> </span>head<span class="w">                            </span><span class="c1"># aplica las pendientes</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>tequio<span class="w"> </span>migrate<span class="w"> </span>status<span class="w">                                   </span><span class="c1"># revisión actual + historial</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>tequio<span class="w"> </span>migrate<span class="w"> </span>rollback<span class="w"> </span>--to<span class="w"> </span>-1<span class="w">                         </span><span class="c1"># revierte una revisión</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>tequio<span class="w"> </span>db<span class="w"> </span>seed<span class="w">                                          </span><span class="c1"># corre los seeders descubiertos</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>tequio<span class="w"> </span>db<span class="w"> </span>fresh<span class="w"> </span>--force<span class="w">                                 </span><span class="c1"># baja, re-migra y siembra (destructivo)</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>tequio<span class="w"> </span>queue<span class="w"> </span>work<span class="w"> </span>--queue<span class="w"> </span>emails<span class="w"> </span>--concurrency<span class="w"> </span><span class="m">4</span><span class="w"> </span>--loglevel<span class="w"> </span>INFO
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>tequio<span class="w"> </span>queue<span class="w"> </span>work<span class="w"> </span>--pool<span class="w"> </span>solo<span class="w">                           </span><span class="c1"># fuerza el pool de ejecución de Celery</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>tequio<span class="w"> </span>schedule<span class="w"> </span>work<span class="w"> </span>--loglevel<span class="w"> </span>INFO<span class="w">                    </span><span class="c1"># beat (despertador de crons)</span>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>tequio<span class="w"> </span>schedule<span class="w"> </span>run<span class="w">                                     </span><span class="c1"># lo dispara el crontab del SO cada minuto</span>
+</code></pre></div>
+<p><code>queue work</code> acepta <code>--pool</code> para elegir el <strong>pool de ejecución de Celery</strong> (<code>prefork</code>,
+<code>solo</code>, <code>threads</code>, <code>gevent</code>). Si lo omites, Celery usa su default (<code>prefork</code>) salvo en
+<strong>Windows</strong>: ahí, si no pasas <code>--pool</code>, tequio usa <code>solo</code> automáticamente y lo avisa en el
+log (el <code>prefork</code> de billiard no es confiable en Windows). Ver
+<a href="../13-colas-y-tareas/">Colas y tareas</a>.</p>
+<p><code>queue work</code> y <code>schedule work</code> son procesos de <strong>larga duración</strong> (bloquean hasta
+Ctrl-C); <code>schedule run</code> es <strong>stateless</strong>: despacha lo que toca este minuto y sale.
+Detalles en <a href="../13-colas-y-tareas/">Colas y tareas</a> y
+<a href="../14-programacion-cron/">Programación (cron)</a>.</p>
+<h2 id="como-funciona-el-descubrimiento">Cómo funciona el descubrimiento<a class="headerlink" href="#como-funciona-el-descubrimiento" title="Permanent link">&para;</a></h2>
+<p>El launcher <code>jornal</code> solo hace <code>from tequio.Core.Console.Cli import run; run()</code>. Al
+importar <code>Cli.py</code>:</p>
+<ol>
+<li>Se importan los comandos del framework (<code>tequio.Core.Console.Commands</code>) y los del
+   proyecto a nivel app (<code>APP_COMMANDS_PACKAGE</code>, default <code>app.Console.Commands</code>) con
+   <code>import_submodules(...)</code>.</li>
+<li>Los decoradores <code>@console_command</code> se registran en un registro interno.</li>
+<li><code>iter_cli_apps()</code> (del Registry) importa los comandos de cada módulo presente y arma
+   un <code>typer.Typer</code> por <strong>grupo</strong>, que se monta como sub-app.</li>
+</ol>
+<p>No hay lista central de comandos: se auto-descubren por convención. Por eso <code>Cli.py</code> no
+declara comandos hardcodeados (salvo <code>list</code> y <code>new</code>, que son raíz).</p>
+<h2 id="crear-un-comando">Crear un comando<a class="headerlink" href="#crear-un-comando" title="Permanent link">&para;</a></h2>
+<h3 id="en-un-modulo">En un módulo<a class="headerlink" href="#en-un-modulo" title="Permanent link">&para;</a></h3>
+<p>Pon el archivo bajo <code>Modules/&lt;X&gt;/Console/Commands/</code>. El <strong>grupo se deduce del módulo</strong>
+(<code>app.Modules.Billing...</code> → grupo <code>billing</code>). Ejemplo real del demo
+(<code>Modules/Demo/Console/Commands/ArchiveNoteCommand.py</code>):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># app/Modules/Demo/Console/Commands/ArchiveNoteCommand.py</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">typer</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tequio.Core.Console</span><span class="w"> </span><span class="kn">import</span> <span class="n">console_command</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tequio.Core.Mediator</span><span class="w"> </span><span class="kn">import</span> <span class="n">send</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tequio.Core.Registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_all_handlers</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tequio.Modules.Demo.Commands</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArchiveNote</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="nd">@console_command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;archive&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Archiva una nota (vía Mediator; mismo comando que usaría un Job).&quot;</span><span class="p">)</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="k">def</span><span class="w"> </span><span class="nf">archive_note</span><span class="p">(</span><span class="n">note_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>    <span class="c1"># La CLI es un proceso aparte: registra a mano lo que el caso de uso necesita.</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>    <span class="n">import_all_handlers</span><span class="p">()</span>  <span class="c1"># handlers del Mediator (resuelve ArchiveNote -&gt; ArchiveNoteHandler)</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">send</span><span class="p">(</span><span class="n">ArchiveNote</span><span class="p">(</span><span class="n">note_id</span><span class="o">=</span><span class="n">note_id</span><span class="p">))</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>    <span class="n">typer</span><span class="o">.</span><span class="n">echo</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Nota </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> archivada (archived=</span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;archived&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>Se invoca:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>tequio<span class="w"> </span>demo<span class="w"> </span>archive<span class="w"> </span><span class="m">7</span>
+</code></pre></div>
+<h3 id="a-nivel-de-proyecto-sin-modulo">A nivel de proyecto (sin módulo)<a class="headerlink" href="#a-nivel-de-proyecto-sin-modulo" title="Permanent link">&para;</a></h3>
+<p>Pon el archivo bajo <code>app/Console/Commands/</code> (<code>APP_COMMANDS_PACKAGE</code>). Aquí el grupo <strong>no
+se puede deducir</strong>, así que es obligatorio pasarlo (si no, el decorador lanza
+<code>ValueError</code> al arrancar — nunca falla en silencio):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># app/Console/Commands/PingCommand.py</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tequio.Core.Console</span><span class="w"> </span><span class="kn">import</span> <span class="n">console_command</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="nd">@console_command</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;ping&quot;</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="s2">&quot;ops&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Verifica que el servicio responde.&quot;</span><span class="p">)</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">ping</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>    <span class="o">...</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>tequio<span class="w"> </span>ops<span class="w"> </span>ping
+</code></pre></div>
+<h2 id="el-decorador-console_command">El decorador <code>console_command</code><a class="headerlink" href="#el-decorador-console_command" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">console_command</span><span class="p">(</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>    <span class="o">*</span><span class="p">,</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>    <span class="n">group</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>    <span class="n">help</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>    <span class="o">**</span><span class="n">typer_kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Callable</span><span class="p">],</span> <span class="n">Callable</span><span class="p">]</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Parámetro</th>
+<th>Para qué</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>Nombre del comando (ej. <code>"work"</code>, <code>"archive"</code>).</td>
+</tr>
+<tr>
+<td><code>group</code></td>
+<td>Grupo. Si es <code>None</code>, se deduce del path del módulo; <strong>obligatorio</strong> fuera de un módulo.</td>
+</tr>
+<tr>
+<td><code>help</code></td>
+<td>Texto de ayuda (se ve en <code>--help</code> y en <code>tequio list</code>).</td>
+</tr>
+<tr>
+<td><code>**typer_kwargs</code></td>
+<td>Cualquier opción extra de Typer.</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>El decorador <strong>no envuelve</strong> la función: queda intacta y reutilizable (puedes
+llamarla directo en tests, corre síncrona en el proceso del CLI). El comando es un
+adapter delgado y <strong>mode-agnostic</strong>: si quieres async, despachas un Job explícito
+(<code>Job.dispatch()</code>), no lo decides el comando.</p>
+</blockquote>
+<p>Las opciones de cada comando son <code>typer.Option(...)</code> / <code>typer.Argument(...)</code> estándar.</p>
+<h2 id="el-borde-de-error-del-cli">El borde de error del CLI<a class="headerlink" href="#el-borde-de-error-del-cli" title="Permanent link">&para;</a></h2>
+<p><code>run()</code> (en <code>tequio/Core/Console/Cli.py</code>) envuelve toda la app de Typer con un borde de
+error: un <code>DomainError</code> esperado sale como <strong>mensaje limpio + su código</strong>, sin
+traceback; un error inesperado sale conciso y su traceback completo va al log. La app de
+Typer lleva <code>pretty_exceptions_enable=False</code> justo para que <strong>nosotros</strong> controlemos ese
+render. Detalle completo en <a href="../19-errores/">Errores de dominio</a>.</p>
+<h2 id="siguiente-paso">Siguiente paso<a class="headerlink" href="#siguiente-paso" title="Permanent link">&para;</a></h2>
+<p><a href="../08-base-de-datos/">Base de datos</a>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Volver al principio
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      tequio · MIT
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "navigation.tracking", "navigation.indexes", "search.suggest", "search.highlight", "content.code.copy", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copiado al portapapeles", "clipboard.copy": "Copiar al portapapeles", "search.result.more.one": "1 m\u00e1s en esta p\u00e1gina", "search.result.more.other": "# m\u00e1s en esta p\u00e1gina", "search.result.none": "No se encontraron documentos", "search.result.one": "1 documento encontrado", "search.result.other": "# documentos encontrados", "search.result.placeholder": "Teclee para comenzar b\u00fasqueda", "search.result.term.missing": "Falta", "select.version": "Seleccionar versi\u00f3n"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
