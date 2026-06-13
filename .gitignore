@@ -9,7 +9,6 @@ __pycache__/
 .ruff_cache/
 .pytest_cache/
 .mypy_cache/
-.claude/settings.local.json
 
 # Secretos y configuración local (NUNCA al repo)
 .env
